@@ -1278,7 +1278,7 @@
             });
         };
         window.modalNuevoSocio = () => {
-            const body = `<div class="grid grid-cols-2 gap-4"><div class="col-span-2 md:col-span-1"><label class="block text-xs font-bold uppercase mb-1">Nombres</label><input id="ns-nom" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block text-xs font-bold uppercase mb-1">Apellidos</label><input id="ns-ape" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><div><label class="block text-xs font-bold uppercase mb-1">Lote / Manzana</label><input id="ns-lote" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><div><label class="block text-xs font-bold uppercase mb-1">Piso</label><input id="ns-piso" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><p class="col-span-2 text-xs text-gray-500 mt-2"><i class="fas fa-info-circle"></i> El usuario y contraseña se generarán automáticamente.</p></div>`;
+            const body = `<div class="grid grid-cols-2 gap-4"><div class="col-span-2 md:col-span-1"><label class="block text-xs font-bold uppercase mb-1">Nombres</label><input id="ns-nom" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block text-xs font-bold uppercase mb-1">Apellidos</label><input id="ns-ape" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><div><label class="block text-xs font-bold uppercase mb-1">Manzana - Lote</label><input id="ns-lote" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><div><label class="block text-xs font-bold uppercase mb-1">Piso</label><input id="ns-piso" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><p class="col-span-2 text-xs text-gray-500 mt-2"><i class="fas fa-info-circle"></i> El usuario y contraseña se generarán automáticamente.</p></div>`;
             openModal("Registrar Nuevo Socio", body, async () => {
                 const nom = document.getElementById('ns-nom').value.trim();
                 const ape = document.getElementById('ns-ape').value.trim();
@@ -1287,7 +1287,7 @@
 
                 if(!nom) return showToast("El nombre es obligatorio", "warning");
                 if(!ape) return showToast("Los apellidos son obligatorios", "warning");
-                if(!lote) return showToast("El lote/manzana es obligatorio", "warning");
+                if(!lote) return showToast("La Manzana-Lote es obligatoria", "warning");
                 
                 let usuario = (nom.charAt(0) + ape.split(' ')[0]).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
                 if (usuario.length < 6) usuario = usuario.padEnd(6, '0');
@@ -2351,7 +2351,7 @@
                 const idxLote = headCells.findIndex(h => /Lote|Manzana/i.test(h));
                 const idxPiso = headCells.findIndex(h => /Piso/i.test(h));
                 const idxEstado = headCells.findIndex(h => /Estado/i.test(h));
-                const header = ['N°', 'Apellidos', 'Nombres', headCells[idxLote] || 'Lote/Manzana', headCells[idxPiso] || 'Piso', headCells[idxEstado] || 'Estado'];
+                const header = ['N°', 'Apellidos', 'Nombres', 'Manzana-Lote', headCells[idxPiso] || 'Piso', headCells[idxEstado] || 'Estado'];
                 const rows = (table.tBodies && table.tBodies[0]) ? Array.from(table.tBodies[0].rows) : [];
                 const data = rows.map(r => {
                     const cells = Array.from(r.cells);
@@ -2474,7 +2474,7 @@
             doc.setFontSize(10);
             doc.text(`Periodo: ${mes}`, pageWidth / 2, y, { align: 'center' });
             y += 12;
-            const head = [['N°','Nombre','Lote','Piso','N° Recibo','Fecha de Pago','Monto']];
+            const head = [['N°','Nombre','Manzana-Lote','Piso','N° Recibo','Fecha de Pago','Monto']];
             const body = rows.map((r, i) => [String(i+1), r.nombre, r.lote, r.piso, r.recibo, r.fecha, `S/ ${Number(r.monto||0).toFixed(2)}`]);
             if (typeof doc.autoTable === 'function') {
                 doc.autoTable({
