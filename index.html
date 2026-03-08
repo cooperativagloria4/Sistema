@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Cooperativa Gloria N°4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <div id="toast-container"></div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center z-50">
+        <div class="login-modern w-full max-w-md p-8 rounded-[20px] shadow-2xl border border-white/30 bg-white/60 backdrop-blur-md">
+            <div class="flex flex-col items-center mb-4">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none" class="mb-2">
+                    <path d="M8 36L24 22L40 36V56H8V36Z" fill="#10B981"/>
+                    <path d="M28 28L40 18L56 30V56H40V36L28 28Z" fill="#0ea5e9" opacity="0.85"/>
+                    <circle cx="50" cy="14" r="6" fill="#10B981" opacity="0.9"/>
+                </svg>
+                <h1 class="text-xl font-semibold text-center text-slate-800">Cooperativa Gloria N°4</h1>
+            </div>
+            <div class="space-y-4">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
+                    <input type="text" id="login-user" placeholder="Usuario" class="w-full pl-10 pr-3 py-3 rounded-xl bg-gray-100 border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition" />
+                </div>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input type="password" id="login-pass" placeholder="Contraseña" class="w-full pl-10 pr-12 py-3 rounded-xl bg-gray-100 border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition" />
+                    <button type="button" aria-label="Mostrar u ocultar contraseña" onclick="toggleLoginPass(this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-700 transition">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <button onclick="handleLogin()" class="w-full bg-[#14532d] hover:bg-[#0f3f22] text-white py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-transform duration-150 hover:-translate-y-0.5">Ingresar</button>
+            </div>
+            <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden">Credenciales inválidas o cuenta inactiva</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-content" class="hidden flex flex-col h-screen">
+        <!-- Header -->
+        <header class="border-b px-4 py-3 flex justify-between items-center no-print z-20">
+            <div class="flex items-center gap-4">
+                <h2 class="text-xl font-bold text-[#0f3f22]">Cooperativa Gloria N°4</h2>
+                <span id="role-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase"></span>
+                <!-- Botón hamburguesa solo en móvil -->
+                <button
+                    type="button"
+                    onclick="toggleSidebar()"
+                    class="md:hidden inline-flex items-center justify-center p-2 rounded-md hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 z-20"
+                    aria-label="Abrir menú de navegación"
+                >
+                    <i class="fas fa-bars text-[#0f3f22]"></i>
+                </button>
+            </div>
+            <div class="flex flex-col items-center gap-1 md:flex-row md:items-center md:gap-4 bg-[#f1f3f5] px-3 py-2 rounded-[30px] shadow-sm border border-gray-200">
+                <span id="user-display" class="font-medium text-[#0f3f22] text-xs md:text-sm leading-none md:leading-normal text-center"></span>
+                <button
+                    onclick="logout()"
+                    class="text-red-600 hover:text-red-700 font-bold text-xs md:text-sm uppercase px-3 py-1.5 md:px-4 md:py-2 rounded-[20px] text-center bg-white border border-red-200"
+                >
+                    Salir
+                </button>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden flex-col md:flex-row">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="hidden md:block w-full md:w-64 bg-slate-800 text-white p-4 space-y-2 no-print overflow-y-auto md:flex-shrink-0">
+                <div class="flex items-center justify-center pb-4 mb-2 border-b border-white/10">
+                    <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+                        <path d="M8 36L24 22L40 36V56H8V36Z" fill="#10B981"/>
+                        <path d="M28 28L40 18L56 30V56H40V36L28 28Z" fill="#0ea5e9" opacity="0.85"/>
+                        <circle cx="50" cy="14" r="6" fill="#10B981" opacity="0.9"/>
+                    </svg>
+                </div>
+                <button id="nav-dashboard" onclick="showSection('dashboard')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </button>
+                <button id="nav-perfil" onclick="showSection('perfil')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3">
+                    <i class="fas fa-user-circle"></i> Mi Perfil
+                </button>
+                <button id="nav-padron" onclick="showSection('padron')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3 hidden admin-nav">
+                    <i class="fas fa-address-book"></i> Padrón de Socios
+                </button>
+                <button id="nav-cuotas" onclick="showSection('cuotas')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3 hidden admin-nav">
+                    <i class="fas fa-money-bill-wave"></i> Control de Cuotas
+                </button>
+                <button id="nav-caja" onclick="showSection('caja')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3 hidden admin-nav">
+                    <i class="fas fa-cash-register"></i> Caja
+                </button>
+                <button id="nav-asambleas" onclick="showSection('asambleas')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3 hidden admin-nav">
+                    <i class="fas fa-users"></i> Asambleas
+                </button>
+                <button id="nav-votaciones" onclick="showSection('votaciones')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3 hidden admin-nav">
+                    <i class="fas fa-vote-yea"></i> Votaciones
+                </button>
+                <!-- Solo Root -->
+                <button id="nav-sistema" onclick="showSection('sistema')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3 hidden">
+                    <i class="fas fa-cogs"></i> Sistema
+                </button>
+            </nav>
+
+            <!-- Content Area -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50">
+                
+                <!-- Dashboard -->
+                <section id="sec-dashboard" class="hidden-section space-y-6">
+                    <h1 class="text-2xl font-bold">Dashboard General</h1>
+                    
+                    <!-- Dashboard Admin -->
+                    <div id="admin-dashboard-widgets" class="space-y-6 hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-blue-500">
+                                <p class="text-gray-500 text-sm font-bold uppercase">Total Socios</p>
+                                <p id="dash-socios" class="text-3xl font-bold">0</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-green-500">
+                                <p class="text-gray-500 text-sm font-bold uppercase">Balance Caja</p>
+                                <p id="dash-caja" class="text-3xl font-bold">S/ 0.00</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-amber-500">
+                                <p class="text-gray-500 text-sm font-bold uppercase">Próxima Asamblea</p>
+                                <p id="dash-asamblea" class="text-lg font-bold">Sin programar</p>
+                            </div>
+                        </div>
+
+                        <!-- Gráficos Estadísticos -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-chart-bar text-blue-500"></i> Ingresos vs Egresos (Últimos 6 meses)
+                                </h3>
+                                <div class="relative h-[300px]">
+                                    <canvas id="chart-finanzas"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-chart-pie text-emerald-500"></i> Estado de Socios
+                                </h3>
+                                <div class="relative h-[300px] flex justify-center">
+                                    <canvas id="chart-socios"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Socio -->
+                    <div id="socio-dashboard-widgets" class="hidden space-y-6">
+                        <!-- Widget de Informe de Caja Publicado (Descargable en PDF) -->
+                        <div id="socio-informe-caja" class="hidden p-6 rounded-xl shadow widget-informe flex flex-col md:flex-row items-center justify-between">
+                            <div>
+                                <h3 class="font-bold text-lg text-green-900 mb-1"><i class="fas fa-file-pdf text-green-600"></i> Informe de Caja Disponible</h3>
+                                <p id="socio-informe-texto" class="text-sm text-green-800"></p>
+                            </div>
+                            <div id="socio-informe-accion" class="mt-4 md:mt-0"></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-red-500">
+                                <p class="text-gray-500 text-sm font-bold uppercase">Mi Deuda Pendiente</p>
+                                <p id="socio-deuda" class="text-3xl font-bold text-red-600">S/ 0.00</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-emerald-500 hidden">
+                                <p class="text-gray-500 text-sm font-bold uppercase">Total Pagado (Histórico)</p>
+                                <p id="socio-pagado" class="text-3xl font-bold text-emerald-600">S/ 0.00</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-6 order-2 md:order-1">
+                                <div class="bg-white p-6 rounded-xl shadow">
+                                    <h3 class="font-bold text-lg mb-4 text-slate-800 border-b pb-2"><i class="fas fa-exclamation-circle text-red-500"></i> Cuotas Pendientes</h3>
+                                    <div id="socio-pendientes" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
+                                </div>
+                                <div class="bg-white p-6 rounded-xl shadow">
+                                    <h3 class="font-bold text-lg mb-4 text-slate-800 border-b pb-2"><i class="fas fa-history text-blue-500"></i> Cuotas Pagadas</h3>
+                                    <div id="socio-historial" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
+                                </div>
+                            </div>
+                            <div class="space-y-6 order-1 md:order-2">
+                                <div class="p-6 rounded-xl shadow widget-asamblea">
+                                    <h3 class="font-bold text-lg mb-4 text-amber-900 border-b border-amber-300 pb-2"><i class="fas fa-calendar-alt text-amber-600"></i> Recordatorio Asambleas</h3>
+                                    <div id="socio-asambleas" class="space-y-2"></div>
+                                </div>
+                                <div class="p-6 rounded-xl shadow widget-votacion">
+                                    <h3 class="font-bold text-lg mb-4 text-indigo-900 border-b border-indigo-300 pb-2"><i class="fas fa-vote-yea text-indigo-600"></i> Votaciones Activas</h3>
+                                    <div id="socio-votaciones" class="space-y-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Perfil -->
+                <section id="sec-perfil" class="hidden-section space-y-4">
+                    <h1 class="text-2xl font-bold">Mi Perfil</h1>
+                    <div class="bg-white p-8 rounded-xl shadow max-w-2xl space-y-4 border-t-4 border-blue-500">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombres</label>
+                                <input type="text" id="p-nom" class="w-full border p-2 rounded bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Apellidos</label>
+                                <input type="text" id="p-ape" class="w-full border p-2 rounded bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div id="perfil-lote-container">
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Lote / Manzana</label>
+                                <input type="text" id="p-lote" class="w-full border p-2 rounded bg-gray-100 cursor-not-allowed" disabled title="Contacte a la directiva para cambiar su lote">
+                            </div>
+                            <div id="perfil-piso-container">
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Piso</label>
+                                <input type="text" id="p-piso" class="w-full border p-2 rounded bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Teléfono</label>
+                                <input type="text" id="p-tel" class="w-full border p-2 rounded bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
+                                <input type="email" id="p-email" class="w-full border p-2 rounded bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="md:col-span-2 pt-4 border-t">
+                                <h4 class="text-sm font-bold text-slate-700 mb-3">Datos de Acceso</h4>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Usuario</label>
+                                <input type="text" id="p-usu" readonly class="w-full border p-2 rounded bg-slate-100 outline-none cursor-not-allowed select-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Contraseña</label>
+                                <input type="password" id="p-pass" class="w-full border p-2 rounded bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nueva contraseña">
+                            </div>
+                        </div>
+                        <div class="pt-4 flex justify-end">
+                            <button onclick="guardarPerfil()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold transition shadow">Guardar Cambios</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Padron -->
+                <section id="sec-padron" class="hidden-section space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-3 flex-wrap">
+                        <h1 class="text-2xl font-bold">Padrón de Socios</h1>
+                        <div class="flex gap-2 flex-wrap items-center">
+                            <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border shadow-sm">
+                                <label class="text-xs font-bold text-gray-500 uppercase">Buscar Socio:</label>
+                                <input type="text" id="padron-search-socio" placeholder="Nombre o Apellido" oninput="renderPadron()" class="outline-none text-sm font-medium bg-gray-100 border border-gray-200 rounded-[15px] px-3 py-2 shadow-sm" />
+                            </div>
+                            <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border shadow-sm">
+                                <label class="text-xs font-bold text-gray-500 uppercase">Manzana:</label>
+                                <input type="text" id="padron-search-manz" placeholder="Ej: A" oninput="renderPadron()" class="outline-none text-sm font-medium bg-gray-100 border border-gray-200 rounded-[15px] px-3 py-2 shadow-sm uppercase" />
+                            </div>
+                            <button onclick="modalNuevoSocio()" class="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-blue-700 transition"><i class="fas fa-plus"></i> Nuevo Socio</button>
+                            <button onclick="exportTableToExcel('table-padron', 'PadronSocios')" class="bg-emerald-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold no-print hover:bg-emerald-700 transition"><i class="fas fa-file-excel"></i> Excel</button>
+                            <button onclick="printAislado('table-padron', 'PADRÓN DE SOCIOS')" class="bg-gray-800 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold no-print hover:bg-gray-900 transition"><i class="fas fa-print"></i> Imprimir</button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow">
+                        <div class="overflow-x-auto">
+                            <table id="table-padron" class="w-full text-left border-collapse min-w-max">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-600 text-sm uppercase">
+                                        <th class="p-4 border-b">N°</th>
+                                        <th class="p-4 border-b">Nombre del Socio</th>
+                                        <th class="p-4 border-b">Lote/Manzana</th>
+                                        <th class="p-4 border-b">Piso</th>
+                                        <th class="p-4 border-b">Estado</th>
+                                        <th class="p-4 border-b">Acción</th>
+                                        <th class="p-4 border-b">Reset</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-padron"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Cuotas -->
+                <section id="sec-cuotas" class="hidden-section space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-2">
+                        <h1 class="text-2xl font-bold">Control de Cuotas</h1>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border shadow-sm">
+                                <label class="text-xs font-bold text-gray-500 uppercase">Filtrar Mes:</label>
+                                <input type="month" id="cuotas-filter-month" onchange="renderCuotas()" class="outline-none text-sm font-medium bg-transparent">
+                            </div>
+                            <div id="admin-cuota-actions" class="flex gap-2 flex-wrap">
+                                <button onclick="modalGenerarCuota()" class="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-blue-700 transition">Generar Cobros</button>
+                                <button onclick="exportTableToExcel('table-cuotas', 'CuotasTotales')" class="bg-emerald-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-emerald-700 transition"><i class="fas fa-file-excel"></i> Excel</button>
+                                <button onclick="printAislado('table-cuotas', 'Reporte de Cuotas')" class="bg-gray-800 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-900 transition"><i class="fas fa-print"></i> Imprimir</button>
+                                <button onclick="reporteMorososPDF()" class="bg-gray-800 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-900 transition"><i class="fas fa-file-pdf"></i> Reporte de Morosos</button>
+                                <button onclick="reportePagadosPDF()" class="bg-gray-800 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-900 transition"><i class="fas fa-file-pdf"></i> Reporte de Pagados</button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500"><i class="fas fa-info-circle text-blue-500"></i> Las cuotas pagadas se eliminan de la base principal, pero se siguen mostrando aquí sincronizadas desde Caja para tu control.</p>
+                    <div class="bg-white rounded-xl shadow overflow-x-auto">
+                        <table id="table-cuotas" class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 text-sm uppercase">
+                                    <th class="p-4 border-b">Fecha Emisión</th>
+                                    <th class="p-4 border-b">Socio</th>
+                                    <th class="p-4 border-b">Lote</th>
+                                    <th class="p-4 border-b">Piso</th>
+                                    <th class="p-4 border-b">Concepto</th>
+                                    <th class="p-4 border-b">Monto</th>
+                                    <th class="p-4 border-b">Recibo</th>
+                                    <th class="p-4 border-b">Estado</th>
+                                    <th class="p-4 border-b">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-cuotas"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Caja -->
+                <section id="sec-caja" class="hidden-section space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <h1 class="text-2xl font-bold">Gestión de Caja</h1>
+                        <div class="flex gap-2 flex-wrap">
+                            <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border shadow-sm">
+                                <label class="text-xs font-bold text-gray-500 uppercase">Mes:</label>
+                                <input type="month" id="caja-filter-month" onchange="renderCaja()" class="outline-none text-sm font-medium bg-transparent">
+                            </div>
+                            <button onclick="modalCajaMov()" class="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-green-700 transition">Nuevo Movimiento</button>
+                            <button onclick="exportTableToExcel('table-caja', 'CajaMensual')" class="bg-emerald-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-emerald-700 transition"><i class="fas fa-file-excel"></i> Excel</button>
+                            <button onclick="printInformeCaja(event, document.getElementById('caja-filter-month').value)" class="bg-gray-800 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-900 transition"><i class="fas fa-print"></i> Imprimir</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-green-500">
+                            <p class="text-xs font-bold text-gray-500 uppercase">Ingresos Mensuales</p>
+                            <p id="caja-total-in" class="text-2xl font-bold text-green-600">S/ 0.00</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-red-500">
+                            <p class="text-xs font-bold text-gray-500 uppercase">Egresos Mensuales</p>
+                            <p id="caja-total-out" class="text-2xl font-bold text-red-600">S/ 0.00</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
+                            <p class="text-xs font-bold text-gray-500 uppercase">Balance Mensual</p>
+                            <p id="caja-balance-ui" class="text-2xl font-bold text-blue-600">S/ 0.00</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow overflow-x-auto">
+                        <table id="table-caja" class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 text-sm uppercase">
+                                    <th class="p-4 border-b">Fecha</th>
+                                    <th class="p-4 border-b">Descripción</th>
+                                    <th class="p-4 border-b">Registrado por</th>
+                                    <th class="p-4 border-b">Monto</th>
+                                    <th class="p-4 border-b">Tipo</th>
+                                    <th class="p-4 border-b">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-caja"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Asambleas -->
+                <section id="sec-asambleas" class="hidden-section space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h1 class="text-2xl font-bold">Asambleas</h1>
+                        <div class="flex gap-2">
+                            <button id="btn-nueva-asamblea" onclick="modalNuevaAsamblea()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-blue-700 transition">Programar Asamblea</button>
+                        </div>
+                    </div>
+                    <div id="asambleas-list" class="grid grid-cols-1 gap-4"></div>
+                </section>
+
+                <!-- Votaciones -->
+                <section id="sec-votaciones" class="hidden-section space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h1 class="text-2xl font-bold">Votaciones</h1>
+                        <button id="btn-nueva-propuesta" onclick="modalNuevaPropuesta()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-blue-700 transition">Nueva Propuesta</button>
+                    </div>
+                    <div id="votaciones-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </section>
+
+                <!-- Sistema (Solo Root) -->
+                <section id="sec-sistema" class="hidden-section space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <h1 class="text-2xl font-bold text-slate-800">Sistema y Configuración</h1>
+                        <div class="flex items-center gap-2">
+                            <button
+                                onclick="modalPublicarInforme()"
+                                class="inline-flex items-center justify-center bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-bold shadow hover:bg-indigo-700 transition"
+                            >
+                                <i class="fas fa-share-alt mr-2"></i>
+                                Publicar informe mensual de caja
+                            </button>
+                            <button
+                                onclick="syncCajaACLAll()"
+                                class="inline-flex items-center justify-center bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-bold shadow hover:bg-emerald-700 transition"
+                                title="Sincroniza la lista de UIDs de administradores con la ACL de Caja"
+                            >
+                                <i class="fas fa-shield-alt mr-2"></i>
+                                Reparar ACL de Caja
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Almacenamiento -->
+                        <div class="bg-white p-6 rounded-xl shadow border border-slate-200">
+                            <h3 class="font-bold text-lg mb-4 text-slate-800 border-b pb-2"><i class="fas fa-database text-blue-500"></i> Estado de la Base de Datos</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <p class="text-sm text-gray-500 uppercase font-bold">Base Principal (Estimado)</p>
+                                    <p id="sys-db-principal" class="text-2xl font-bold text-slate-700">Calculando...</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 uppercase font-bold">Base de Caja (Estimado)</p>
+                                    <p id="sys-db-caja" class="text-2xl font-bold text-slate-700">Calculando...</p>
+                                </div>
+                                <p class="text-xs text-gray-400">El límite gratuito en Firebase Realtime Database es de 1 GB (1,048,576 KB).</p>
+                                
+                                <div class="pt-4 border-t border-red-100">
+                                    <button onclick="limpiarBasePrincipal()" class="w-full bg-red-100 text-red-700 hover:bg-red-600 hover:text-white border border-red-300 py-2 rounded-lg font-bold transition">
+                                        <i class="fas fa-broom"></i> Limpiar Base de Datos Principal
+                                    </button>
+                                    <p class="text-[10px] text-red-500 mt-1 text-center">¡Atención! Eliminará Cuotas pendientes, Asambleas y Votaciones. (Conservará Socios, Admins y Caja).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admins -->
+                        <div class="bg-white p-6 rounded-xl shadow border border-slate-200">
+                            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                                <h3 class="font-bold text-lg text-slate-800"><i class="fas fa-user-shield text-blue-500"></i> Administradores</h3>
+                                <button onclick="modalNuevoAdmin()" class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-900 transition">Nuevo Admin</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead><tr class="bg-slate-100 text-slate-600 uppercase text-xs"><th class="p-2">Usuario</th><th class="p-2">Nombre</th><th class="p-2">Acciones</th></tr></thead>
+                                    <tbody id="tbody-admins"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Configuración Global -->
+                        <div class="bg-white p-6 rounded-xl shadow border border-slate-200">
+                            <h3 class="font-bold text-lg mb-4 text-slate-800 border-b pb-2"><i class="fas fa-sliders-h text-blue-500"></i> Configuración Global</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 cursor-pointer p-3 border rounded-lg bg-red-50 border-red-200 hover:bg-red-100 transition">
+                                    <input type="checkbox" id="cfg-voto-morosos" class="w-5 h-5 text-red-600 rounded" onchange="toggleRestriccionVoto(this.checked)">
+                                    <span class="text-sm font-bold text-red-800">Restringir votaciones a socios con deuda</span>
+                                </label>
+                                <p class="text-xs text-slate-500">Si está activo, los socios con cuotas pendientes no podrán votar.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Reusable Modal -->
+    <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-[60]">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+            <div id="modal-header" class="px-6 py-4 bg-slate-100 border-b flex justify-between">
+                <h3 id="modal-title" class="font-bold text-slate-800">Título</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            <div id="modal-body" class="p-6 overflow-y-auto max-h-[70vh]"></div>
+            <div class="px-6 py-4 bg-slate-50 flex justify-end gap-3 border-t">
+                <button onclick="closeModal()" class="px-4 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-lg transition">Cancelar</button>
+                <button id="modal-action-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 transition text-white rounded-lg font-bold shadow">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table oculta para exportar votaciones a excel -->
+    <table id="temp-votaciones-excel" style="display:none;"></table>
+
+    <script type="module" src="js/script.js"></script>
+</body>
+</html>
