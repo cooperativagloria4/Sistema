@@ -719,10 +719,7 @@
                     return;
                 }
                 if (!passNueva) { showToast("Ingresa la nueva contraseña", "warning"); return; }
-                if (passNueva.length < 8) {
-                    showToast("La contraseña debe tener al menos 8 caracteres.", "warning");
-                    return;
-                }
+                if (passNueva.length < 6) passNueva = passNueva.padEnd(6, '0');
                 const email = user.email || `${String((window.currentUser && window.currentUser.usuario) || '').toLowerCase()}@urbgloria.com`;
                 try {
                     const cred = EmailAuthProvider.credential(email, passActual || '');
