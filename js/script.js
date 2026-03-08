@@ -1280,8 +1280,15 @@
         window.modalNuevoSocio = () => {
             const body = `<div class="grid grid-cols-2 gap-4"><div class="col-span-2 md:col-span-1"><label class="block text-xs font-bold uppercase mb-1">Nombres</label><input id="ns-nom" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block text-xs font-bold uppercase mb-1">Apellidos</label><input id="ns-ape" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><div><label class="block text-xs font-bold uppercase mb-1">Lote / Manzana</label><input id="ns-lote" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><div><label class="block text-xs font-bold uppercase mb-1">Piso</label><input id="ns-piso" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"></div><p class="col-span-2 text-xs text-gray-500 mt-2"><i class="fas fa-info-circle"></i> El usuario y contraseña se generarán automáticamente.</p></div>`;
             openModal("Registrar Nuevo Socio", body, async () => {
-                const nom = document.getElementById('ns-nom').value.trim(), ape = document.getElementById('ns-ape').value.trim();
-                if(!nom || !ape) return showToast("Nombres y apellidos son obligatorios", "warning");
+                const nom = document.getElementById('ns-nom').value.trim();
+                const ape = document.getElementById('ns-ape').value.trim();
+                const lote = document.getElementById('ns-lote').value.trim();
+                const piso = document.getElementById('ns-piso').value.trim();
+
+                if(!nom) return showToast("El nombre es obligatorio", "warning");
+                if(!ape) return showToast("Los apellidos son obligatorios", "warning");
+                if(!lote) return showToast("El lote/manzana es obligatorio", "warning");
+                
                 let usuario = (nom.charAt(0) + ape.split(' ')[0]).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
                 if (usuario.length < 6) usuario = usuario.padEnd(6, '0');
                 const email = `${usuario}@urbgloria.com`;
@@ -1542,6 +1549,15 @@
         window.modalCajaMov = () => {
             const body = `<div class="space-y-4"><div><label class="block text-xs font-bold uppercase mb-1">Descripción</label><input id="c-desc" type="text" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Monto (S/)</label><input id="c-monto" type="number" step="0.01" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Tipo de Movimiento</label><select id="c-tipo" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"><option value="ingreso">Ingreso (+)</option><option value="egreso">Egreso (-)</option></select></div><div><label class="block text-xs font-bold uppercase mb-1">Fecha</label><input id="c-fecha" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div></div>`;
             openModal("Registrar Movimiento de Caja", body, async () => {
+                const desc = document.getElementById('c-desc').value.trim();
+                const monto = document.getElementById('c-monto').value.trim();
+                const tipo = document.getElementById('c-tipo').value;
+                const fecha = document.getElementById('c-fecha').value;
+
+                if(!desc) return showToast("La descripción es obligatoria", "warning");
+                if(!monto || isNaN(monto) || parseFloat(monto) <= 0) return showToast("Ingresa un monto válido mayor a 0", "warning");
+                if(!fecha) return showToast("La fecha es obligatoria", "warning");
+
                 const registradoPor = (currentUser && (currentUser.nombre || `${currentUser.nombres || ''} ${currentUser.apellidos || ''}`.trim())) || 'Sistema';
                 const fbUser = auth.currentUser;
                 if (!fbUser) { showToast("No autenticado. Inicie sesión para registrar en Caja.", "error"); console.error("[Caja] Intento de registro sin auth en modalCajaMov"); return; }
@@ -1549,10 +1565,10 @@
                 console.log(`[Caja] Registrando movimiento manual con UID ${adminUid}`);
                 try {
                     await push(ref(dbCaja, 'movimientos'), {
-                        descripcion: document.getElementById('c-desc').value,
-                        monto: document.getElementById('c-monto').value,
-                        tipo: document.getElementById('c-tipo').value,
-                        fecha: document.getElementById('c-fecha').value,
+                        descripcion: desc,
+                        monto: monto,
+                        tipo: tipo,
+                        fecha: fecha,
                         registradoPor,
                         adminUid
                     });
@@ -1651,7 +1667,25 @@
                     <input id="a-lug" placeholder="Lugar (ej. Local Comunal)" class="w-full border p-2 rounded bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>`;
-            openModal("Programar Asamblea", body, async () => { await push(ref(db, 'asambleas'), { asunto: document.getElementById('a-asu').value, fecha: document.getElementById('a-fec').value, hora: document.getElementById('a-hor').value, lugar: document.getElementById('a-lug').value, asistentes: {} }); closeModal(); });
+            openModal("Programar Asamblea", body, async () => {
+                const asu = document.getElementById('a-asu').value.trim();
+                const fec = document.getElementById('a-fec').value;
+                const hor = document.getElementById('a-hor').value;
+                const lug = document.getElementById('a-lug').value.trim();
+
+                if(!asu) return showToast("El asunto de la asamblea es obligatorio", "warning");
+                if(!fec) return showToast("La fecha es obligatoria", "warning");
+                if(!hor) return showToast("La hora es obligatoria", "warning");
+
+                await push(ref(db, 'asambleas'), { 
+                    asunto: asu, 
+                    fecha: fec, 
+                    hora: hor, 
+                    lugar: lug, 
+                    asistentes: {} 
+                }); 
+                closeModal(); 
+            });
         };
         window.modalTomarAsistencia = (id) => {
             const a = asambleasData.find(x => x.id === id); const asistentes = a.asistentes || {};
@@ -1764,7 +1798,12 @@
         window.closeVotacion = async (id) => { await update(ref(db, `votaciones/${id}`), { cerrada: true }); };
         window.modalNuevaPropuesta = () => {
             const body = `<div class="space-y-4"><input id="v-pre" placeholder="Pregunta de la votación" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div>`;
-            openModal("Crear Nueva Votación", body, async () => { await push(ref(db, 'votaciones'), { pregunta: document.getElementById('v-pre').value, votos: {} }); closeModal(); });
+            openModal("Crear Nueva Votación", body, async () => { 
+                const pre = document.getElementById('v-pre').value.trim();
+                if(!pre) return showToast("La pregunta de la votación es obligatoria", "warning");
+                await push(ref(db, 'votaciones'), { pregunta: pre, votos: {} }); 
+                closeModal(); 
+            });
         };
         window.deleteVotacion = (id) => { if(confirm("¿Eliminar votación definitivamente?")) remove(ref(db, `votaciones/${id}`)); };
         window.imprimirVotacion = (id) => {
