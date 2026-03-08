@@ -1470,15 +1470,26 @@
                 return A.numero - B.numero;
             });
             const optionsSocios = activosOrdenados.map(s => `<option value="${s.id}">${s.apellidos}, ${s.nombres}</option>`).join('');
-            const body = `<div class="space-y-4"><div><label class="block text-xs font-bold uppercase mb-1">Concepto</label><input id="q-concepto" type="text" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Monto (S/)</label><input id="q-monto" type="number" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Fecha de emisión</label><input id="q-fecha" type="date" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none" value="${new Date().toISOString().split('T')[0]}"></div><div><label class="block text-xs font-bold uppercase mb-1">Destinatario</label><select id="q-dest" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"><option value="todos">Todos los Socios Activos</option>${optionsSocios}</select></div></div>`;
+            const body = `<div class="space-y-4"><div><label class="block text-xs font-bold uppercase mb-1">Concepto</label><input id="q-concepto" type="text" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Monto (S/)</label><input id="q-monto" type="number" step="0.01" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Fecha de emisión</label><input id="q-fecha" type="date" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none" value="${new Date().toISOString().split('T')[0]}"></div><div><label class="block text-xs font-bold uppercase mb-1">Destinatario</label><select id="q-dest" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"><option value="todos">Todos los Socios Activos</option>${optionsSocios}</select></div></div>`;
             openModal("Generar Nueva Cuota", body, async () => {
-                const concepto = document.getElementById('q-concepto').value;
-                const monto = document.getElementById('q-monto').value;
+                const concepto = document.getElementById('q-concepto').value.trim();
+                const monto = document.getElementById('q-monto').value.trim();
                 const dest = document.getElementById('q-dest').value;
                 const fechaSel = (document.getElementById('q-fecha').value || '').trim();
                 const fecha = fechaSel || new Date().toISOString().split('T')[0];
-                if(dest === 'todos') { for (const s of sociosData.filter(x => x.estado !== 'inactivo')) await push(ref(db, 'cuotas'), { socioId: s.id, concepto, monto, fecha }); } 
+
+                if(!concepto) return showToast("El concepto de la cuota es obligatorio", "warning");
+                if(!monto || isNaN(monto) || parseFloat(monto) <= 0) return showToast("Ingresa un monto válido mayor a 0", "warning");
+                if(!fecha) return showToast("La fecha de emisión es obligatoria", "warning");
+
+                if(dest === 'todos') { 
+                    const activos = sociosData.filter(x => x.estado !== 'inactivo');
+                    if(activos.length === 0) return showToast("No hay socios activos para generar cuotas", "error");
+                    for (const s of activos) await push(ref(db, 'cuotas'), { socioId: s.id, concepto, monto, fecha }); 
+                } 
                 else await push(ref(db, 'cuotas'), { socioId: dest, concepto, monto, fecha });
+                
+                showToast("Cobros generados correctamente", "success");
                 closeModal();
             });
         };
