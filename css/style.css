@@ -248,6 +248,68 @@ input:focus, select:focus, textarea:focus {
 
     /* Header Fixes */
     header { background: rgba(15, 23, 42, 0.8) !important; border-bottom-color: #334155; }
+
+    /* Modals Fixes */
+    #modal .bg-white { background-color: #1e293b !important; }
+    #modal-header { background-color: #0f172a !important; border-bottom-color: #334155 !important; }
+    #modal-title { color: #ffffff !important; font-weight: 800 !important; }
+    #modal-body { background-color: #1e293b !important; color: #f1f5f9 !important; }
+    #modal-body label { color: #f1f5f9 !important; font-weight: 700 !important; }
+    #modal .bg-slate-50, #modal .bg-slate-100, #modal .bg-gray-50 { background-color: #0f172a !important; border-top-color: #334155 !important; border-bottom-color: #334155 !important; }
+    #modal .text-gray-600 { color: #cbd5e1 !important; font-weight: 800 !important; } /* Botón Cancelar */
+    #modal .text-gray-600:hover { background-color: #334155 !important; }
+    #modal input, #modal select, #modal textarea { background-color: #020617 !important; color: #ffffff !important; border-color: #334155 !important; }
+
+    /* Votaciones y Asambleas */
+    #votaciones-list > div, #asambleas-list > div, .widget-votacion, .widget-asamblea { 
+        background-color: #1e293b !important; 
+        border-color: #334155 !important;
+        color: #f1f5f9 !important;
+    }
+    .widget-votacion h3, .widget-asamblea h3 { color: #10b981 !important; border-bottom-color: #334155 !important; }
+    .widget-votacion .text-blue-600, .widget-votacion .text-gray-500, .widget-votacion .text-indigo-900 { color: #94a3b8 !important; }
+    .widget-votacion span, .widget-asamblea span, .widget-votacion p { color: #f1f5f9 !important; }
+    
+    /* Opciones de voto SI/NO */
+    .bg-slate-50.border.rounded-lg { background-color: #0f172a !important; border-color: #334155 !important; }
+    .text-slate-700.font-bold { color: #f1f5f9 !important; }
+    
+    /* Badges de Votos y Estados */
+    .bg-blue-100.text-blue-700, .bg-blue-100.text-blue-800 { background-color: #1e3a8a !important; color: #bfdbfe !important; }
+    .bg-red-100.text-red-700, .bg-red-100.text-red-800 { background-color: #450a0a !important; color: #fecaca !important; }
+    .bg-emerald-100.text-emerald-700 { background-color: #064e3b !important; color: #6ee7b7 !important; }
+    .bg-green-100.text-green-800 { background-color: #064e3b !important; color: #6ee7b7 !important; }
+
+    /* Sistema y Configuración */
+    #sec-sistema .bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
+    #sec-sistema h3 { color: #10b981 !important; border-bottom-color: #334155 !important; }
+    #sec-sistema p.text-gray-500, #sec-sistema p.text-slate-700, #sec-sistema p.text-slate-500 { color: #cbd5e1 !important; }
+    #sec-sistema .text-2xl.font-bold.text-slate-700 { color: #ffffff !important; }
+    
+    /* Botón Limpiar Base de Datos */
+    .bg-red-100.text-red-700.hover\:bg-red-600 { 
+        background-color: #7f1d1d !important; 
+        color: #ffffff !important; 
+        border-color: #991b1b !important; 
+    }
+    .bg-red-100.text-red-700.hover\:bg-red-600:hover { background-color: #b91c1c !important; }
+
+    /* Checkbox "Restringir votaciones" */
+    .bg-red-50.border-red-200, .bg-red-50.border-red-200 * { 
+        background-color: #450a0a !important; 
+        border-color: #7f1d1d !important; 
+        color: #fecaca !important;
+    }
+    .text-red-800 { color: #fecaca !important; }
+
+    /* Fix para el texto "Aún no publicado" en modales */
+    .text-amber-700.italic, .text-indigo-700.italic { color: #fbbf24 !important; }
+
+    /* Botones generales de acción */
+    .text-blue-600 { color: #60a5fa !important; }
+    .text-emerald-600 { color: #34d399 !important; }
+    .text-indigo-600, .text-indigo-700, .text-indigo-800 { color: #818cf8 !important; }
+    .text-slate-400 { color: #94a3b8 !important; } /* Botón cerrar modal */
 }
 
 /* Toast Notifications */
