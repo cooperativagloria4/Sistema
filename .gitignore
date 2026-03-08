@@ -1,9 +1,0 @@
-# INSTRUCCIONES PARA GITHUB
-# 1. Renombrar este archivo de 'gitignore.txt' a '.gitignore' usando la Terminal:
-#    mv gitignore.txt .gitignore
-# 2. Esto protegerá tus llaves privadas de Firebase.
-
-js/firebase-config.js
-.DS_Store
-Thumbs.db
-*.log
