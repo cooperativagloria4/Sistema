@@ -1080,6 +1080,7 @@
             document.getElementById('p-usu').value = currentUser.usuario || '';
             const pp = document.getElementById('p-pass'); if (pp) pp.value = '';
             const isSocio = currentUser.role === 'socio';
+            const isRoot = currentUser.role === 'root';
             const pisoEl = document.getElementById('p-piso');
             const emailEl = document.getElementById('p-email');
             if (pisoEl) {
@@ -1096,16 +1097,18 @@
                 }
             }
             if (emailEl) {
-                if (isSocio) {
-                    emailEl.disabled = true;
-                    emailEl.classList.remove('bg-slate-50');
-                    emailEl.classList.add('bg-gray-100','cursor-not-allowed');
-                    emailEl.title = 'Contacte a la directiva para cambiar su email';
-                } else {
+                // Solo el Admin Raíz (Root) puede editar el campo Email.
+                // Los otros Administradores y Socios lo tienen bloqueado.
+                if (isRoot) {
                     emailEl.disabled = false;
                     emailEl.classList.remove('bg-gray-100','cursor-not-allowed');
                     emailEl.classList.add('bg-slate-50');
                     emailEl.title = '';
+                } else {
+                    emailEl.disabled = true;
+                    emailEl.classList.remove('bg-slate-50');
+                    emailEl.classList.add('bg-gray-100','cursor-not-allowed');
+                    emailEl.title = 'Solo el Administrador Raíz puede cambiar este campo';
                 }
             }
         }
