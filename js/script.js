@@ -1916,6 +1916,15 @@
             if(!currentUser || currentUser.role !== 'socio') return;
             
             const voterId = currentUser.id;
+            const v = votacionesData.find(x => x.id === id);
+            if (!v) {
+                showToast("Votación no encontrada.", "error");
+                return;
+            }
+
+            const confirmarVoto = confirm(`¿Estás seguro de que deseas votar "${opcion}" para la propuesta: "${v.pregunta}"? Esta acción no se puede deshacer.`);
+            if (!confirmarVoto) return;
+
             console.log(`[Votación] Socio ${voterId} intentando votar '${opcion}' en ${id}`);
             
             const restr = configData.votaciones && configData.votaciones.restringirMorosos;
@@ -1926,12 +1935,6 @@
                     showToast("Voto restringido por cuotas pendientes. Regulariza tu situación para participar.", "warning");
                     return;
                 }
-            }
-
-            const v = votacionesData.find(x => x.id === id);
-            if (!v) {
-                showToast("Votación no encontrada.", "error");
-                return;
             }
             
             if (v.cerrada) { 
