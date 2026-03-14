@@ -2451,9 +2451,9 @@
                 doc.setGState(new doc.GState({ opacity: 0.25 })); // Opacidad aumentada a 0.25
             } catch(e) {}
 
-            // Dibujamos el sello subido 1 línea (aprox -20pt en Y respecto a la versión anterior)
-            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 230, { align: 'center', angle: 35 });
-            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, 305, { align: 'center', angle: 35 });
+            // Dibujamos el sello subido 2 líneas respecto al original (aprox -40pt en Y total)
+            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 210, { align: 'center', angle: 35 });
+            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, 285, { align: 'center', angle: 35 });
 
             try {
                 doc.restoreGraphicsState();
