@@ -428,14 +428,27 @@
             window.currentUser = user;
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-content').classList.remove('hidden');
-            document.getElementById('user-display').innerText = user.nombre || `${user.nombres || ''} ${user.apellidos || ''}`;
+            const userFullName = user.nombre || `${user.nombres || ''} ${user.apellidos || ''}`;
+            document.getElementById('user-display').innerText = userFullName;
+            const userSidebarDisplay = document.getElementById('user-display-sidebar');
+            if (userSidebarDisplay) userSidebarDisplay.innerText = userFullName;
+            
             console.log("Login exitoso para:", user.usuario || user.email || '');
             
+            const roleText = user.role === 'root' ? 'Admin Raíz' : (user.role === 'admin' ? 'Administrador' : 'Socio');
+            const roleClass = (user.role === 'root' || user.role === 'admin') ? 'bg-red-600 text-white' : 'bg-blue-600 text-white';
+            
             const badge = document.getElementById('role-badge');
-            badge.innerText = user.role === 'root' ? 'Admin Raíz' : (user.role === 'admin' ? 'Administrador' : 'Socio');
-            badge.className = (user.role === 'root' || user.role === 'admin')
-                ? 'bg-red-600 text-white px-2 py-0.5 rounded-full text-[7px] sm:text-[10px] font-bold uppercase whitespace-nowrap'
-                : 'bg-blue-600 text-white px-2 py-0.5 rounded-full text-[7px] sm:text-[10px] font-bold uppercase whitespace-nowrap';
+            if (badge) {
+                badge.innerText = roleText;
+                badge.className = `${roleClass} px-2.5 py-0.5 rounded-full text-xs font-bold uppercase whitespace-nowrap`;
+            }
+
+            const badgeSidebar = document.getElementById('role-badge-sidebar');
+            if (badgeSidebar) {
+                badgeSidebar.innerText = roleText;
+                badgeSidebar.className = `${roleClass} mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase`;
+            }
 
             limpiarInterfaz();
 
