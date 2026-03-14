@@ -2314,13 +2314,25 @@
         window.generarPDFRecibo = async (data) => {
             const { jsPDF } = window.jspdf || {};
             if (!jsPDF) return;
-            const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
+            
+            // Función para formatear fecha a letras (ej: 14 de marzo del 2026)
+            const fechaALetras = (fechaStr) => {
+                if(!fechaStr) return '-';
+                try {
+                    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                    const [y, m, d] = fechaStr.split('-').map(Number);
+                    return `${d} de ${meses[m-1]} del ${y}`;
+                } catch(e) { return fechaStr; }
+            };
+
+            // Tamaño personalizado: Media carta o similar (aprox 612x396 pt) para que no sea A4 completo
+            const doc = new jsPDF({ unit: 'pt', format: [612, 400], orientation: 'portrait' });
             const pageWidth = doc.internal.pageSize.getWidth();
             const margin = 40;
-            let y = 50;
+            let y = 40;
 
             // --- CABECERA CENTRADA ---
-            doc.setFontSize(13); // Tamaño ligeramente reducido para mejor ajuste
+            doc.setFontSize(13);
             doc.setFont('helvetica', 'bold');
             doc.text('COOPERATIVA DE VIVIENDA GLORIA Nº 4', pageWidth / 2, y, { align: 'center' });
             y += 20;
@@ -2329,35 +2341,32 @@
             doc.text('RECIBO DE PAGO', pageWidth / 2, y, { align: 'center' });
 
             // --- CUADRO DE MONTO Y NÚMERO (TOP RIGHT) ---
-            const boxWidth = 100; // Reducido de 120 a 100 para dar más espacio al centro
-            const boxHeight = 25; // Reducido ligeramente
+            const boxWidth = 100;
+            const boxHeight = 25;
             const boxX = pageWidth - margin - boxWidth;
-            const boxY = 30;
+            const boxY = 25;
 
-            // Dibujar rectángulo redondeado para el monto (Fondo azul claro)
-            doc.setFillColor(191, 219, 254); // Blue 200
+            doc.setFillColor(191, 219, 254);
             doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 8, 8, 'F');
             
-            // Texto del Monto dentro del cuadro
-            doc.setFontSize(12); // Reducido ligeramente de 14 a 12
+            doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(30, 58, 138); // Blue 900
+            doc.setTextColor(30, 58, 138);
             doc.text(`S/ ${data.monto}`, boxX + boxWidth / 2, boxY + 17, { align: 'center' });
 
-            // Número de recibo debajo del cuadro
             doc.setTextColor(0, 0, 0);
-            doc.setFontSize(10); // Reducido de 11 a 10
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.text(`Nº: ${data.numeroRecibo}`, boxX + boxWidth / 2, boxY + boxHeight + 12, { align: 'center' });
 
             // --- CUERPO DEL RECIBO (LEFT) ---
-            y = 100;
+            y = 90;
             const labelX = margin;
             const valueX = margin + 100;
             const lineHeight = 18;
 
             const items = [
-                { label: 'Fecha de pago:', value: data.fechaPago },
+                { label: 'Fecha de pago:', value: fechaALetras(data.fechaPago) },
                 { label: 'Socio:', value: data.nombreSocio },
                 { label: 'Lote:', value: data.loteSocio },
                 { label: 'Concepto:', value: data.concepto },
@@ -2374,22 +2383,23 @@
             });
 
             // --- LÍNEA DE FIRMA (CENTRO INFERIOR) ---
-            y += 20; // Espacio reducido 2 líneas más (de 40 a 20)
-            doc.setDrawColor(0, 0, 0); // Color NEGRO
+            y += 40;
+            doc.setDrawColor(0, 0, 0);
             doc.line(pageWidth / 2 - 100, y, pageWidth / 2 + 100, y);
             y += 15;
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.text('FIRMA', pageWidth / 2, y, { align: 'center' });
 
-            // Pie de página
+            // Pie de página (más cerca del final del contenido)
+            y += 30;
             const now = new Date();
             const pad = n => String(n).padStart(2,'0');
             const fechaGen = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} a las ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-            doc.setFontSize(8);
+            doc.setFontSize(7);
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(150, 150, 150);
-            doc.text(`Documento generado el ${fechaGen}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 30, { align: 'center' });
+            doc.text(`Documento generado el ${fechaGen}`, pageWidth / 2, y, { align: 'center' });
 
             doc.save(`Recibo_${data.numeroRecibo}.pdf`);
         };
