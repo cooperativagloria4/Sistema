@@ -2325,8 +2325,8 @@
                 } catch(e) { return fechaStr; }
             };
 
-            // Tamaño personalizado: Media carta o similar (aprox 612x396 pt) para que no sea A4 completo
-            const doc = new jsPDF({ unit: 'pt', format: [612, 400], orientation: 'portrait' });
+            // Tamaño: Ancho A4 estándar (595 pt) pero Corto verticalmente (300 pt)
+            const doc = new jsPDF({ unit: 'pt', format: [595, 300], orientation: 'portrait' });
             const pageWidth = doc.internal.pageSize.getWidth();
             const margin = 40;
             let y = 40;
