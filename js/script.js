@@ -2319,14 +2319,15 @@
             const margin = 40;
             let y = 50;
 
-            // --- CABECERA CENTRADA ---
-            doc.setFontSize(14); // Reducido de 16 a 14 para asegurar que el nombre largo entre bien
+            // --- CABECERA ---
+            doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('COOPERATIVA DE VIVIENDA GLORIA Nº 4', pageWidth / 2, y, { align: 'center' });
+            // Alineado a la izquierda con margen para no chocar con el cuadro azul
+            doc.text('COOPERATIVA DE VIVIENDA GLORIA Nº 4', margin, y);
             y += 20;
             doc.setFontSize(14);
             doc.setFont('helvetica', 'normal');
-            doc.text('RECIBO DE PAGO', pageWidth / 2, y, { align: 'center' });
+            doc.text('RECIBO DE PAGO', margin, y);
 
             // --- CUADRO DE MONTO Y NÚMERO (TOP RIGHT) ---
             const boxWidth = 120;
