@@ -2320,9 +2320,9 @@
             let y = 50;
 
             // --- CABECERA CENTRADA ---
-            doc.setFontSize(16);
+            doc.setFontSize(14); // Reducido de 16 a 14 para asegurar que el nombre largo entre bien
             doc.setFont('helvetica', 'bold');
-            doc.text('COOPERATIVA GLORIA Nº 4', pageWidth / 2, y, { align: 'center' });
+            doc.text('COOPERATIVA DE VIVIENDA GLORIA Nº 4', pageWidth / 2, y, { align: 'center' });
             y += 20;
             doc.setFontSize(14);
             doc.setFont('helvetica', 'normal');
@@ -2374,8 +2374,8 @@
             });
 
             // --- LÍNEA DE FIRMA (CENTRO INFERIOR) ---
-            y += 40; // Espacio reducido significativamente (3 líneas menos aprox)
-            doc.setDrawColor(200, 200, 200);
+            y += 20; // Espacio reducido 2 líneas más (de 40 a 20)
+            doc.setDrawColor(0, 0, 0); // Color NEGRO
             doc.line(pageWidth / 2 - 100, y, pageWidth / 2 + 100, y);
             y += 15;
             doc.setFontSize(10);
