@@ -1391,14 +1391,20 @@
                     if (movSnap.exists()) {
                         const raw = movSnap.val() || {};
                         Object.values(raw).forEach(m => {
-                            const n = parseInt(String(m && m.numeroRecibo || '').trim(), 10);
+                            const val = String(m && m.numeroRecibo || '').trim();
+                            const parts = val.split('-');
+                            const lastPart = parts[parts.length - 1];
+                            const n = parseInt(lastPart, 10);
                             if (isFinite(n) && n > maxMovRemote) maxMovRemote = n;
                         });
                     }
                 } catch(_) {}
                 const maxMovLocal = (Array.isArray(allCajaMovs) ? allCajaMovs : [])
                     .reduce((acc, m) => {
-                        const n = parseInt(String(m && m.numeroRecibo || '').trim(), 10);
+                        const val = String(m && m.numeroRecibo || '').trim();
+                        const parts = val.split('-');
+                        const lastPart = parts[parts.length - 1];
+                        const n = parseInt(lastPart, 10);
                         return (isFinite(n) && n > acc) ? n : acc;
                     }, 0);
                 const storedNext = parseInt(String(localStorage.getItem('cajaReciboNext') || '0'), 10);
@@ -1445,7 +1451,11 @@
                             fechaEmision: cuota.fecha || new Date().toISOString().split('T')[0]
                         }
                     });
-                    const numInt = Number(numeroRecibo);
+                    
+                    const parts = numeroRecibo.split('-');
+                    const lastPart = parts[parts.length - 1];
+                    const numInt = parseInt(lastPart, 10);
+
                     if (isFinite(numInt) && numInt > 0) {
                         try { await runTransaction(ref(dbCaja, 'config/correlativos/recibosNext'), (current) => {
                             const cur = Number(current);
@@ -1530,15 +1540,16 @@
                 tr.className = "border-b hover:bg-gray-50 text-sm transition";
                 if(m.tipo === 'ingreso') totalIn += parseFloat(m.monto); else totalOut += parseFloat(m.monto);
                 tr.innerHTML = `
-                    <td class="p-4">${m.fecha}</td>
-                    <td class="p-4 font-medium text-slate-700">${m.descripcion}</td>
-                    <td class="p-4 text-sm text-slate-600">${m.registradoPor || '-'}</td>
+                    <td class="p-4 text-xs text-gray-500">${m.fecha}</td>
+                    <td class="p-4 font-bold text-slate-700">${m.numeroRecibo || '-'}</td>
+                    <td class="p-4 text-sm text-slate-700">${m.descripcion}</td>
+                    <td class="p-4 text-xs text-slate-500">${m.registradoPor || '-'}</td>
                     <td class="p-4 font-bold ${m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}">S/ ${parseFloat(m.monto).toFixed(2)}</td>
                     <td class="p-4 uppercase text-[10px] font-black tracking-wider">${m.tipo}</td>
                     <td class="p-4">
                         ${m.esCuota
                             ? (currentUser && currentUser.role === 'root'
-                                ? `<button onclick="revertirACuota('${m.id}')" class="text-xs font-bold text-red-500 hover:text-red-700 underline">Revertir a Pendiente</button>`
+                                ? `<button onclick="revertirACuota('${m.id}')" class="text-xs font-bold text-red-500 hover:text-red-700 underline">Revertir</button>`
                                 : '-')
                             : '-'}
                     </td>
@@ -1582,12 +1593,21 @@
             }
         };
         window.modalCajaMov = () => {
-            const body = `<div class="space-y-4"><div><label class="block text-xs font-bold uppercase mb-1">Descripción</label><input id="c-desc" type="text" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Monto (S/)</label><input id="c-monto" type="number" step="0.01" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Tipo de Movimiento</label><select id="c-tipo" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"><option value="ingreso">Ingreso (+)</option><option value="egreso">Egreso (-)</option></select></div><div><label class="block text-xs font-bold uppercase mb-1">Fecha</label><input id="c-fecha" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div></div>`;
+            const body = `<div class="space-y-4">
+                <div><label class="block text-xs font-bold uppercase mb-1">Descripción</label><input id="c-desc" type="text" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div>
+                <div><label class="block text-xs font-bold uppercase mb-1">Nº de Recibo (Opcional)</label><input id="c-recibo" type="text" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ej: 2024-001"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-xs font-bold uppercase mb-1">Monto (S/)</label><input id="c-monto" type="number" step="0.01" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div>
+                    <div><label class="block text-xs font-bold uppercase mb-1">Tipo</label><select id="c-tipo" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"><option value="ingreso">Ingreso (+)</option><option value="egreso">Egreso (-)</option></select></div>
+                </div>
+                <div><label class="block text-xs font-bold uppercase mb-1">Fecha</label><input id="c-fecha" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div>
+            </div>`;
             openModal("Registrar Movimiento de Caja", body, async () => {
                 const desc = document.getElementById('c-desc').value.trim();
                 const monto = document.getElementById('c-monto').value.trim();
                 const tipo = document.getElementById('c-tipo').value;
                 const fecha = document.getElementById('c-fecha').value;
+                const numeroRecibo = document.getElementById('c-recibo').value.trim();
 
                 if(!desc) return showToast("La descripción es obligatoria", "warning");
                 if(!monto || isNaN(monto) || parseFloat(monto) <= 0) return showToast("Ingresa un monto válido mayor a 0", "warning");
@@ -1597,7 +1617,6 @@
                 const fbUser = auth.currentUser;
                 if (!fbUser) { showToast("No autenticado. Inicie sesión para registrar en Caja.", "error"); console.error("[Caja] Intento de registro sin auth en modalCajaMov"); return; }
                 const adminUid = fbUser.uid;
-                console.log(`[Caja] Registrando movimiento manual con UID ${adminUid}`);
                 try {
                     await push(ref(dbCaja, 'movimientos'), {
                         descripcion: desc,
@@ -1605,7 +1624,8 @@
                         tipo: tipo,
                         fecha: fecha,
                         registradoPor,
-                        adminUid
+                        adminUid,
+                        numeroRecibo: numeroRecibo || '-'
                     });
                     showToast("Movimiento registrado en Caja", "success");
                     closeModal();
