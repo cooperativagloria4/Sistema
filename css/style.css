@@ -56,22 +56,41 @@ header {
 
 #sidebar button { 
     border-radius: 12px; 
-    transition: background 0.2s ease, transform 0.2s ease; 
+    transition: all 0.2s ease; 
+    position: relative;
+    overflow: hidden;
 }
 
 #sidebar button:hover { 
-    background: rgba(16,185,129,0.15) !important; 
+    background: rgba(255,255,255,0.05) !important; 
+    transform: translateX(4px);
 }
 
 #sidebar button:focus-visible, #sidebar button[aria-current="page"] { 
-    background: rgba(16,185,129,0.25) !important; 
+    background: rgba(16,185,129,0.1) !important; 
     outline: none; 
 }
 
 #sidebar .nav-active { 
-    background: rgba(16,185,129,0.15) !important; 
-    box-shadow: inset 4px 0 0 var(--brand-emerald); 
-    text-shadow: 0 0 6px rgba(16,185,129,0.4); 
+    background: linear-gradient(90deg, rgba(16,185,129,0.15) 0%, rgba(16,185,129,0) 100%) !important; 
+    color: #10B981;
+    font-weight: 600;
+}
+
+#sidebar .nav-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10%;
+    height: 80%;
+    width: 4px;
+    background-color: var(--brand-emerald);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 8px rgba(16,185,129,0.6);
+}
+
+#sidebar .nav-active i {
+    color: #10B981;
 }
 
 section h1, section h2 { 
