@@ -2319,19 +2319,18 @@
             const margin = 40;
             let y = 50;
 
-            // --- CABECERA ---
-            doc.setFontSize(14);
+            // --- CABECERA CENTRADA ---
+            doc.setFontSize(13); // Tamaño ligeramente reducido para mejor ajuste
             doc.setFont('helvetica', 'bold');
-            // Alineado a la izquierda con margen para no chocar con el cuadro azul
-            doc.text('COOPERATIVA DE VIVIENDA GLORIA Nº 4', margin, y);
+            doc.text('COOPERATIVA DE VIVIENDA GLORIA Nº 4', pageWidth / 2, y, { align: 'center' });
             y += 20;
-            doc.setFontSize(14);
+            doc.setFontSize(13);
             doc.setFont('helvetica', 'normal');
-            doc.text('RECIBO DE PAGO', margin, y);
+            doc.text('RECIBO DE PAGO', pageWidth / 2, y, { align: 'center' });
 
             // --- CUADRO DE MONTO Y NÚMERO (TOP RIGHT) ---
-            const boxWidth = 120;
-            const boxHeight = 30;
+            const boxWidth = 100; // Reducido de 120 a 100 para dar más espacio al centro
+            const boxHeight = 25; // Reducido ligeramente
             const boxX = pageWidth - margin - boxWidth;
             const boxY = 30;
 
@@ -2340,16 +2339,16 @@
             doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 8, 8, 'F');
             
             // Texto del Monto dentro del cuadro
-            doc.setFontSize(14);
+            doc.setFontSize(12); // Reducido ligeramente de 14 a 12
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(30, 58, 138); // Blue 900
-            doc.text(`S/ ${data.monto}`, boxX + boxWidth / 2, boxY + 20, { align: 'center' });
+            doc.text(`S/ ${data.monto}`, boxX + boxWidth / 2, boxY + 17, { align: 'center' });
 
             // Número de recibo debajo del cuadro
             doc.setTextColor(0, 0, 0);
-            doc.setFontSize(11);
+            doc.setFontSize(10); // Reducido de 11 a 10
             doc.setFont('helvetica', 'bold');
-            doc.text(`Nº: ${data.numeroRecibo}`, boxX + boxWidth / 2, boxY + boxHeight + 15, { align: 'center' });
+            doc.text(`Nº: ${data.numeroRecibo}`, boxX + boxWidth / 2, boxY + boxHeight + 12, { align: 'center' });
 
             // --- CUERPO DEL RECIBO (LEFT) ---
             y = 100;
