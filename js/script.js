@@ -2357,12 +2357,10 @@
             const lineHeight = 18;
 
             const items = [
-                { label: 'Recibo Nº:', value: data.numeroRecibo },
                 { label: 'Fecha de pago:', value: data.fechaPago },
                 { label: 'Socio:', value: data.nombreSocio },
                 { label: 'Lote:', value: data.loteSocio },
                 { label: 'Concepto:', value: data.concepto },
-                { label: 'Monto:', value: `S/ ${data.monto}` },
                 { label: 'Registrado por:', value: data.registradoPor }
             ];
 
@@ -2376,7 +2374,7 @@
             });
 
             // --- LÍNEA DE FIRMA (CENTRO INFERIOR) ---
-            y = 350; // Posición fija para la firma
+            y += 60; // Reducido el espacio para la firma
             doc.setDrawColor(200, 200, 200);
             doc.line(pageWidth / 2 - 100, y, pageWidth / 2 + 100, y);
             y += 15;
