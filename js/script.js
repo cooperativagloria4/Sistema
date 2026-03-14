@@ -1612,17 +1612,26 @@
             let totalIn = 0, totalOut = 0;
             filtrados.forEach(m => {
                 const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50 text-sm transition";
-                if(m.tipo === 'ingreso') totalIn += parseFloat(m.monto); else totalOut += parseFloat(m.monto);
+                const esRevertido = m.estado === 'revertido';
+                tr.className = `border-b hover:bg-gray-50 text-sm transition ${esRevertido ? 'opacity-50 grayscale bg-red-50' : ''}`;
+                
+                if (!esRevertido) {
+                    if(m.tipo === 'ingreso') totalIn += parseFloat(m.monto); 
+                    else totalOut += parseFloat(m.monto);
+                }
+
                 tr.innerHTML = `
-                    <td class="p-4 text-xs text-gray-500">${m.fecha}</td>
-                    <td class="p-4 font-bold text-slate-700">${m.numeroRecibo || '-'}</td>
-                    <td class="p-4 text-sm text-slate-700">${m.descripcion}</td>
-                    <td class="p-4 text-xs text-slate-500">${m.registradoPor || '-'}</td>
-                    <td class="p-4 font-bold ${m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}">S/ ${parseFloat(m.monto).toFixed(2)}</td>
-                    <td class="p-4 uppercase text-[10px] font-black tracking-wider">${m.tipo}</td>
+                    <td class="p-4 text-xs text-gray-500 ${esRevertido ? 'line-through' : ''}">${m.fecha}</td>
+                    <td class="p-4 font-bold text-slate-700 ${esRevertido ? 'line-through' : ''}">${m.numeroRecibo || '-'}</td>
+                    <td class="p-4 text-sm text-slate-700">
+                        ${esRevertido ? '<span class="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded mr-2 font-black">REVERTIDO</span>' : ''}
+                        <span class="${esRevertido ? 'line-through text-gray-400' : ''}">${m.descripcion}</span>
+                    </td>
+                    <td class="p-4 text-xs text-gray-500">${m.registradoPor || '-'}</td>
+                    <td class="p-4 font-bold ${esRevertido ? 'text-gray-400 line-through' : (m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600')}">S/ ${parseFloat(m.monto).toFixed(2)}</td>
+                    <td class="p-4 uppercase text-[10px] font-black tracking-wider ${esRevertido ? 'text-gray-400' : ''}">${m.tipo}</td>
                     <td class="p-4">
-                        ${m.esCuota
+                        ${m.esCuota && !esRevertido
                             ? (currentUser && currentUser.role === 'root'
                                 ? `<button onclick="revertirACuota('${m.id}')" class="text-xs font-bold text-red-500 hover:text-red-700 underline">Revertir</button>`
                                 : '-')
@@ -1661,8 +1670,15 @@
                     monto: mov.monto,
                     fecha: mov.cuotaOriginal.fechaEmision
                 });
-                await remove(ref(dbCaja, `movimientos/${movId}`));
-                allCajaMovs = allCajaMovs.filter(x => x.id !== movId);
+                
+                // En lugar de eliminar, marcamos como revertido
+                await update(ref(dbCaja, `movimientos/${movId}`), { 
+                    estado: 'revertido',
+                    revertidoPor: (currentUser && (currentUser.nombre || `${currentUser.nombres || ''} ${currentUser.apellidos || ''}`.trim())) || 'Sistema',
+                    fechaReversion: new Date().toISOString()
+                });
+
+                showToast("Pago revertido. La cuota vuelve a estar pendiente.", "success");
                 renderCuotas();
                 renderCaja();
             }
@@ -2524,9 +2540,12 @@
 
             // --- CÓDIGO QR DE VALIDACIÓN ---
             try {
-                const qrData = `COOPERATIVA GLORIA N° 4\nRecibo: ${data.numeroRecibo}\nSocio: ${data.nombreSocio}\nMonto: S/ ${data.monto}\nFecha: ${fechaALetras(data.fechaPago)}\nID: ${data.id || 'N/A'}`;
+                // Generar URL de validación dinámica
+                const currentUrl = window.location.origin + window.location.pathname;
+                const validationUrl = `${currentUrl}?validar=${data.id}`;
+                
                 const qr = new QRious({
-                    value: qrData,
+                    value: validationUrl,
                     size: 100,
                     level: 'M'
                 });
@@ -3019,4 +3038,96 @@
                 if (eye) { eye.classList.remove('fa-eye-slash'); eye.classList.add('fa-eye'); }
             }
         };
+
+        // --- VALIDACIÓN DE RECIBOS POR QR ---
+        window.validarReciboQR = async (id) => {
+            if (!id) return;
+            
+            showToast("Validando recibo...", "info");
+            
+            try {
+                // Buscamos el movimiento en la base de datos de Caja
+                const movRef = ref(dbCaja, `movimientos/${id}`);
+                const snap = await get(movRef);
+                
+                if (snap.exists()) {
+                    const m = snap.val();
+                    const esValido = m.estado !== 'revertido'; // Asumimos que si no está revertido es válido
+                    
+                    const statusHtml = esValido 
+                        ? `<div class="bg-green-100 text-green-800 p-4 rounded-lg flex items-center gap-3 mb-4">
+                            <i class="fas fa-check-circle text-2xl"></i>
+                            <div>
+                                <p class="font-bold">RECIBO VÁLIDO</p>
+                                <p class="text-xs">Este documento ha sido verificado en el sistema.</p>
+                            </div>
+                           </div>`
+                        : `<div class="bg-red-100 text-red-800 p-4 rounded-lg flex items-center gap-3 mb-4">
+                            <i class="fas fa-times-circle text-2xl"></i>
+                            <div>
+                                <p class="font-bold">RECIBO INVÁLIDO / REVERTIDO</p>
+                                <p class="text-xs">Este pago fue revertido el ${m.fechaReversion ? m.fechaReversion.split('T')[0] : '-'}.</p>
+                            </div>
+                           </div>`;
+
+                    const body = `
+                        <div class="space-y-4">
+                            ${statusHtml}
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div class="text-gray-500">Número:</div>
+                                <div class="font-bold">${m.numeroRecibo || '-'}</div>
+                                <div class="text-gray-500">Socio:</div>
+                                <div class="font-bold text-blue-700">${m.descripcion.split('-')[1] || '-'}</div>
+                                <div class="text-gray-500">Fecha Pago:</div>
+                                <div class="font-bold">${m.fecha || '-'}</div>
+                                <div class="text-gray-500">Monto:</div>
+                                <div class="font-bold text-lg">S/ ${parseFloat(m.monto || 0).toFixed(2)}</div>
+                                <div class="text-gray-500">Concepto:</div>
+                                <div class="font-medium">${m.descripcion.split('-')[0] || '-'}</div>
+                                ${esValido ? `
+                                    <div class="text-gray-500">Registrado por:</div>
+                                    <div class="font-medium text-xs">${m.registradoPor || '-'}</div>
+                                ` : `
+                                    <div class="text-gray-500 text-red-600">Revertido por:</div>
+                                    <div class="font-medium text-xs text-red-600">${m.revertidoPor || '-'}</div>
+                                `}
+                            </div>
+                            <p class="text-[10px] text-gray-400 text-center mt-4">ID de Transacción: ${id}</p>
+                        </div>
+                    `;
+                    
+                    openModal("Verificación de Recibo", body);
+                } else {
+                    const body = `
+                        <div class="text-center py-6">
+                            <i class="fas fa-exclamation-triangle text-amber-500 text-5xl mb-4"></i>
+                            <h3 class="text-lg font-bold text-gray-800">Recibo no encontrado</h3>
+                            <p class="text-sm text-gray-600 px-4 mt-2">El código escaneado no corresponde a ningún registro activo en nuestra base de datos oficial. Podría ser un recibo falso o eliminado.</p>
+                        </div>
+                    `;
+                    openModal("Error de Validación", body);
+                }
+            } catch (e) {
+                console.error("Error al validar QR:", e);
+                showToast("Error de conexión al validar", "error");
+            }
+        };
+
+        // Detectar parámetro de validación en la URL
+        function checkValidationUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const idValidar = params.get('validar');
+            if (idValidar) {
+                // Esperamos un momento a que el sistema inicialice
+                setTimeout(() => {
+                    window.validarReciboQR(idValidar);
+                    // Limpiar la URL sin recargar para que no vuelva a saltar el modal al refrescar
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }, 1000);
+            }
+        }
+        
+        // Ejecutar detección al cargar
+        checkValidationUrl();
+
 
