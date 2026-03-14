@@ -1391,11 +1391,6 @@
                 const candidateBase = Math.max(confVal, maxMovRemote, maxMovLocal, isFinite(storedNext) && storedNext > 0 ? storedNext : 0);
                 const candidate = (candidateBase > 0) ? (candidateBase + 1) : 1;
                 sugerido = String(candidate > 0 ? candidate : 1);
-                try {
-                    if (candidate > confVal) {
-                        await set(ref(dbCaja, 'config/correlativos/recibosNext'), candidate);
-                    }
-                } catch(_) {}
             } catch(_) { sugerido = '1'; }
             const body = `<div class="space-y-3">
                 <div><label class="block text-xs font-bold uppercase mb-1">Número de Recibo Físico</label><input id="recibo-num" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-emerald-500" value="${sugerido}" placeholder="Ingrese el número de recibo"></div>
