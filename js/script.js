@@ -3064,33 +3064,44 @@
                     </select>
                 </div>
             </div>`;
+            
             openModal("Generar Invitación", body, async () => {
+                const btn = document.getElementById('modal-action-btn');
                 const nombre = document.getElementById('vis-nom').value.trim();
                 const dni = document.getElementById('vis-dni').value.trim();
                 const horas = parseInt(document.getElementById('vis-dur').value);
                 
                 if(!nombre) return showToast("El nombre es obligatorio", "warning");
                 
-                const expira = Date.now() + (horas * 60 * 60 * 1000);
-                const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-                
-                const nuevaVisita = {
-                    id: push(ref(db, 'visitas')).key,
-                    nombre,
-                    dni,
-                    socioId: currentUser.id,
-                    socioNombre: currentUser.nombre || `${currentUser.nombres} ${currentUser.apellidos}`,
-                    lote: currentUser.lote || '-',
-                    codigo: code,
-                    expira,
-                    creado: Date.now(),
-                    estado: 'activo'
-                };
-                
-                await set(ref(db, `visitas/${nuevaVisita.id}`), nuevaVisita);
-                showToast("Invitación generada correctamente", "success");
-                closeModal();
-                renderVisitasSocio();
+                if (btn) { btn.disabled = true; btn.innerText = "Generando..."; }
+
+                try {
+                    const expira = Date.now() + (horas * 60 * 60 * 1000);
+                    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+                    const newVisitaRef = push(ref(db, 'visitas'));
+                    
+                    const nuevaVisita = {
+                        id: newVisitaRef.key,
+                        nombre,
+                        dni,
+                        socioId: currentUser.id,
+                        socioNombre: currentUser.nombre || `${currentUser.nombres} ${currentUser.apellidos}`,
+                        lote: currentUser.lote || '-',
+                        codigo: code,
+                        expira,
+                        creado: Date.now(),
+                        estado: 'activo'
+                    };
+                    
+                    await set(newVisitaRef, nuevaVisita);
+                    showToast("Invitación generada correctamente", "success");
+                    closeModal();
+                } catch(e) {
+                    console.error("Error al guardar visita:", e);
+                    showToast("Error de permisos o conexión al guardar", "error");
+                } finally {
+                    if (btn) { btn.disabled = false; btn.innerText = "Confirmar"; }
+                }
             });
         };
 
