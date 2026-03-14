@@ -1726,12 +1726,8 @@
                         fecha: mov.cuotaOriginal.fechaEmision
                     });
                     
-                    // En lugar de eliminar, marcamos como revertido para auditoría y validación QR
-                    await update(ref(dbCaja, `movimientos/${movId}`), { 
-                        estado: 'revertido',
-                        revertidoPor: (currentUser && (currentUser.nombre || `${currentUser.nombres || ''} ${currentUser.apellidos || ''}`.trim())) || 'Sistema',
-                        fechaReversion: new Date().toISOString()
-                    });
+                    // Eliminamos definitivamente el movimiento de la base de datos de Caja
+                    await remove(ref(dbCaja, `movimientos/${movId}`));
 
                     showToast("Pago revertido. La cuota vuelve a estar pendiente.", "success");
                     renderCuotas();
