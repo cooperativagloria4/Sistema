@@ -1477,16 +1477,21 @@
                     }
                     const nombreSocio = socio ? `${socio.apellidos}, ${socio.nombres}` : 'Socio Eliminado';
                     const loteSocio = socio ? (socio.lote || '-') : '-';
-                    const cuerpo = `
-                        <div>Recibo Nº: ${numeroRecibo}</div>
-                        <div>Fecha de pago: ${fechaPago}</div>
-                        <div>Socio: ${nombreSocio}</div>
-                        <div>Lote: ${loteSocio}</div>
-                        <div>Concepto: ${cuota.concepto}</div>
-                        <div>Monto: S/ ${parseFloat(cuota.monto).toFixed(2)}</div>
-                        <div>Registrado por: ${registradoPor}</div>
-                    `;
-                    try { await window.generarPDFEstandar('RECIBO DE PAGO', cuerpo, `Recibo_${numeroRecibo}.pdf`); } catch(_) {}
+                    
+                    try { 
+                        await window.generarPDFRecibo({
+                            numeroRecibo,
+                            fechaPago,
+                            nombreSocio,
+                            loteSocio,
+                            concepto: cuota.concepto,
+                            monto: parseFloat(cuota.monto).toFixed(2),
+                            registradoPor
+                        }); 
+                    } catch(err) {
+                        console.error("Error generando PDF de recibo:", err);
+                    }
+
                     await remove(ref(db, `cuotas/${id}`));
                     showToast("Pago registrado correctamente", "success");
                     closeModal();
@@ -2306,6 +2311,91 @@
             }
             doc.save(`${title}.pdf`);
         };
+        window.generarPDFRecibo = async (data) => {
+            const { jsPDF } = window.jspdf || {};
+            if (!jsPDF) return;
+            const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 40;
+            let y = 50;
+
+            // --- CABECERA CENTRADA ---
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('COOPERATIVA GLORIA Nº 4', pageWidth / 2, y, { align: 'center' });
+            y += 20;
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'normal');
+            doc.text('RECIBO DE PAGO', pageWidth / 2, y, { align: 'center' });
+
+            // --- CUADRO DE MONTO Y NÚMERO (TOP RIGHT) ---
+            const boxWidth = 120;
+            const boxHeight = 30;
+            const boxX = pageWidth - margin - boxWidth;
+            const boxY = 30;
+
+            // Dibujar rectángulo redondeado para el monto
+            doc.setDrawColor(191, 219, 254); // Slate 200
+            doc.setFillColor(191, 219, 254); // Slate 200 (Azul claro)
+            doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 8, 8, 'F');
+            
+            // Texto del Monto dentro del cuadro
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(30, 58, 138); // Blue 900
+            doc.text(`S/ ${data.monto}`, boxX + boxWidth / 2, boxY + 20, { align: 'center' });
+
+            // Número de recibo debajo del cuadro
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(11);
+            doc.text(`Nº: ${data.numeroRecibo}`, boxX + boxWidth / 2, boxY + boxHeight + 15, { align: 'center' });
+
+            // --- CUERPO DEL RECIBO (LEFT) ---
+            y = 100;
+            const labelX = margin;
+            const valueOffset = 100;
+            const lineHeight = 18;
+
+            const items = [
+                { label: 'Recibo Nº:', value: data.numeroRecibo },
+                { label: 'Fecha de pago:', value: data.fechaPago },
+                { label: 'Socio:', value: data.nombreSocio },
+                { label: 'Lote:', value: data.loteSocio },
+                { label: 'Concepto:', value: data.concepto },
+                { label: 'Monto:', value: `S/ ${data.monto}` },
+                { label: 'Registrado por:', value: data.registradoPor }
+            ];
+
+            doc.setFontSize(11);
+            items.forEach(item => {
+                doc.setFont(undefined, 'bold');
+                doc.text(item.label, labelX, y);
+                doc.setFont(undefined, 'normal');
+                doc.text(String(item.value || '-'), labelX + valueOffset, y);
+                y += lineHeight;
+            });
+
+            // --- FIRMA (BOTTOM) ---
+            y += 80;
+            doc.setDrawColor(200, 200, 200);
+            doc.line(pageWidth / 2 - 100, y, pageWidth / 2 + 100, y);
+            y += 15;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'bold');
+            doc.text('FIRMA DEL TESORERO', pageWidth / 2, y, { align: 'center' });
+
+            // Pie de página con fecha de generación
+            const now = new Date();
+            const pad = n => String(n).padStart(2,'0');
+            const fechaGen = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} a las ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(150, 150, 150);
+            doc.text(`Documento generado el ${fechaGen}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 30, { align: 'center' });
+
+            doc.save(`Recibo_${data.numeroRecibo}.pdf`);
+        };
+
         window.generarPDFEstandar = async (titulo, cuerpoHtml, nombre) => {
             const now = new Date();
             const pad = n => String(n).padStart(2,'0');
