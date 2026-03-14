@@ -661,27 +661,40 @@
         }
         async function ensureCajaSubscriptionForSocio() {
             if (cajaSocioUnsub) { try { cajaSocioUnsub(); } catch(_) {} cajaSocioUnsub = null; }
+            if (!currentUser || currentUser.role !== 'socio') return;
+
+            const sid = currentUser.id;
+            const suid = currentUser.uid;
             const qRef = ref(dbCaja, 'movimientos');
+
             try {
                 const snap = await get(qRef);
                 if (snap.exists()) {
                     const data = snap.val() || {};
                     const all = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-                    socioCajaMovs = all.filter(m => m && m.esCuota && m.estado !== 'revertido' && m.cuotaOriginal && m.cuotaOriginal.socioId === (currentUser && currentUser.id));
+                    socioCajaMovs = all.filter(m => m && m.esCuota && m.estado !== 'revertido' && (
+                        (m.cuotaOriginal && (m.cuotaOriginal.socioId === sid || (suid && m.cuotaOriginal.socioId === suid))) ||
+                        (m.socioId && (m.socioId === sid || (suid && m.socioId === suid)))
+                    ));
                     renderSocioDashboard();
                 } else {
                     socioCajaMovs = [];
                 }
-            } catch(_) {}
+            } catch(e) {
+                console.warn("[CajaSocio] No se pudo obtener movimientos iniciales (Posible falta de permisos de lectura general)", e);
+            }
+
             cajaSocioUnsub = onValue(qRef, (snap) => {
                 const data = snap.val() || {};
                 const all = Object.entries(data).map(([id, val]) => ({ id, ...val }));
                 socioCajaMovs = all.filter(m => m && m.esCuota && m.estado !== 'revertido' && (
-                    (m.cuotaOriginal && m.cuotaOriginal.socioId === (currentUser && currentUser.id)) ||
-                    (m.socioId && m.socioId === (currentUser && currentUser.id))
+                    (m.cuotaOriginal && (m.cuotaOriginal.socioId === sid || (suid && m.cuotaOriginal.socioId === suid))) ||
+                    (m.socioId && (m.socioId === sid || (suid && m.socioId === suid)))
                 ));
                 renderSocioDashboard();
-            }, (_) => {});
+            }, (err) => {
+                console.error("[CajaSocio] Error en suscripción de movimientos", err);
+            });
         }
 
         window.syncSociosToAuth = async () => {
@@ -1059,18 +1072,29 @@
 
         // --- DASHBOARD SOCIO ---
         function renderSocioDashboard() {
-            if(currentUser.role !== 'socio') return;
+            if(!currentUser || currentUser.role !== 'socio') return;
 
-            const misPendientes = cuotasData.filter(c => c.socioId === currentUser.id && (c.estado ? c.estado === 'PENDIENTE' : true));
-            const deuda = misPendientes.reduce((acc, c) => acc + parseFloat(c.monto), 0);
+            const sid = currentUser.id;
+            const suid = currentUser.uid;
+
+            // Filtrar cuotas pendientes: debe coincidir con el ID o UID del socio
+            // y el estado debe ser 'pendiente' (si existe) o no tener estado (crudo de DB)
+            const misPendientes = cuotasData.filter(c => 
+                (c.socioId === sid || (suid && c.socioId === suid)) && 
+                (!c.estado || String(c.estado).toLowerCase() === 'pendiente')
+            );
+            
+            const deuda = misPendientes.reduce((acc, c) => acc + (parseFloat(c.monto) || 0), 0);
             const isMoroso = deuda > 0;
             
             document.getElementById('socio-deuda').innerText = `S/ ${deuda.toFixed(2)}`;
+            
+            // Obtener pagos: de la lista filtrada de socio o de la lista general (si tuviera permisos)
             const pagos = (socioCajaMovs && socioCajaMovs.length > 0)
                 ? socioCajaMovs.filter(m => m.estado !== 'revertido')
                 : allCajaMovs.filter(m => m.esCuota && m.estado !== 'revertido' && (
-                    (m.cuotaOriginal && m.cuotaOriginal.socioId === currentUser.id) ||
-                    (m.socioId && m.socioId === currentUser.id)
+                    (m.cuotaOriginal && (m.cuotaOriginal.socioId === sid || (suid && m.cuotaOriginal.socioId === suid))) ||
+                    (m.socioId && (m.socioId === sid || (suid && m.socioId === suid)))
                 ));
             let pendientesHTML = '';
             misPendientes.forEach(c => {
