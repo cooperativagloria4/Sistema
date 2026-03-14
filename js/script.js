@@ -2441,22 +2441,19 @@
             let y = 30;
 
             // --- MARCA DE AGUA (Sello de Seguridad) ---
-            // Usamos un gris muy claro para asegurar compatibilidad si GState falla
+            // Reposicionado para estar centrado en el CUERPO del recibo (antes de la línea de corte)
             doc.setTextColor(220, 220, 220); 
-            doc.setFontSize(50);
+            doc.setFontSize(40); // Reducido un poco para que quepa mejor arriba
             doc.setFont('helvetica', 'bold');
             
-            // Intentamos aplicar transparencia si está disponible
             try {
                 doc.saveGraphicsState();
-                doc.setGState(new doc.GState({ opacity: 0.2 }));
-            } catch(e) {
-                console.log("Transparencia GState no soportada, usando color plano claro");
-            }
+                doc.setGState(new doc.GState({ opacity: 0.18 }));
+            } catch(e) {}
 
-            // Dibujamos en el centro de la página
-            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, pageHeight / 2 - 60, { align: 'center', angle: 45 });
-            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, pageHeight / 2 + 40, { align: 'center', angle: 45 });
+            // Dibujamos en la zona superior/media del recibo (entre Y=150 y Y=250)
+            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 160, { align: 'center', angle: 35 });
+            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, 240, { align: 'center', angle: 35 });
 
             try {
                 doc.restoreGraphicsState();
