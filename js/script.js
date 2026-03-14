@@ -418,6 +418,12 @@
 
         function loginSuccess(user) {
             try { console.clear(); } catch(_) {}
+            
+            // Forzar scroll al inicio en móviles (especialmente Chrome)
+            try { 
+                if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+            } catch(_) {}
+
             currentUser = user;
             window.currentUser = user;
             document.getElementById('login-screen').classList.add('hidden');
@@ -442,7 +448,25 @@
                 ensureSocioStatusGuard(user);
             }
 
-            window.scrollTo(0, 0);
+            // Función robusta para resetear el scroll
+            const forceScrollTop = () => {
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+                // Importante: El contenedor con scroll es <main>
+                const main = document.querySelector('main');
+                if (main) main.scrollTop = 0;
+                // También intentar llevar el header a la vista
+                const header = document.querySelector('header');
+                if (header) header.scrollIntoView({ behavior: 'instant', block: 'start' });
+            };
+
+            forceScrollTop();
+            setTimeout(forceScrollTop, 50);
+            setTimeout(forceScrollTop, 150);
+            setTimeout(forceScrollTop, 300);
+            setTimeout(forceScrollTop, 600); // Un intento extra para conexiones lentas
+
             cargarDatosPerfil();
             initData();
             ensureActivityListeners();
@@ -521,6 +545,8 @@
             if(id === 'sistema') renderSistema();
 
             // Resetear scroll al cambiar de sección (especialmente en móvil)
+            const main = document.querySelector('main');
+            if (main) main.scrollTop = 0;
             window.scrollTo(0, 0);
 
             // Cerrar el menú lateral automáticamente en móviles
