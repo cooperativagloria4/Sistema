@@ -1,5 +1,5 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, update, remove, get, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+        import { getDatabase, ref, set, push, onValue, update, remove, get, runTransaction, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
         import { getAuth, setPersistence, inMemoryPersistence, browserLocalPersistence, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider, updateEmail, deleteUser, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         
         // ========================================================
@@ -612,9 +612,28 @@
         onValue(ref(db, 'cuotas'), (snap) => {
             const data = snap.val();
             cuotasData = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+            console.log(`[Cuotas] ${cuotasData.length} registros cargados.`);
             if(currentUser.role === 'root' || (currentUser.role === 'admin' && currentUser.permisos?.cuotas)) renderCuotas();
             if(currentUser.role === 'socio') renderSocioDashboard();
             updateCharts();
+        }, (err) => {
+            console.error("[Cuotas] Error de lectura:", err);
+            // Si falla la lectura global (típico de reglas restrictivas para socios), 
+            // intentamos una consulta específica para el socio actual
+            if(currentUser && currentUser.role === 'socio' && currentUser.id) {
+                console.log(`[Cuotas] Intentando consulta específica para socio ${currentUser.id}`);
+                const qSocio = query(ref(db, 'cuotas'), orderByChild('socioId'), equalTo(currentUser.id));
+                onValue(qSocio, (snapSocio) => {
+                    const dataSocio = snapSocio.val();
+                    cuotasData = dataSocio ? Object.entries(dataSocio).map(([id, val]) => ({ id, ...val })) : [];
+                    renderSocioDashboard();
+                }, (err2) => {
+                    console.error("[Cuotas] Error en consulta específica:", err2);
+                    renderSocioDashboard();
+                });
+            } else {
+                renderSocioDashboard();
+            }
         });
             onValue(ref(db, 'asambleas'), (snap) => {
                 const data = snap.val();
@@ -642,6 +661,19 @@
                 if(currentUser.role === 'root' || (currentUser.role === 'admin' && currentUser.permisos?.votaciones)) renderVotaciones();
                 if(currentUser.role === 'socio') renderSocioDashboard();
             });
+            // Escuchar pagos históricos del socio en la DB principal
+            if (currentUser.role === 'socio') {
+                onValue(ref(db, `pagosSocios/${currentUser.id}`), (snap) => {
+                    const data = snap.val();
+                    const pagosHistoricos = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+                    // Mezclamos con los de Caja si existen, evitando duplicados por ID
+                    const existingIds = new Set(socioCajaMovs.map(m => m.id));
+                    pagosHistoricos.forEach(p => {
+                        if (!existingIds.has(p.id)) socioCajaMovs.push(p);
+                    });
+                    renderSocioDashboard();
+                });
+            }
             // Escuchar configuración de correlativos en Caja
              onValue(ref(dbCaja, 'config/correlativos'), (snap) => {
                  const val = snap.val() || {};
@@ -661,27 +693,40 @@
         }
         async function ensureCajaSubscriptionForSocio() {
             if (cajaSocioUnsub) { try { cajaSocioUnsub(); } catch(_) {} cajaSocioUnsub = null; }
+            
+            // Intentar lectura global (solo funcionará si las reglas lo permiten)
             const qRef = ref(dbCaja, 'movimientos');
-            try {
-                const snap = await get(qRef);
-                if (snap.exists()) {
-                    const data = snap.val() || {};
-                    const all = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-                    socioCajaMovs = all.filter(m => m && m.esCuota && m.estado !== 'revertido' && m.cuotaOriginal && m.cuotaOriginal.socioId === (currentUser && currentUser.id));
-                    renderSocioDashboard();
-                } else {
-                    socioCajaMovs = [];
-                }
-            } catch(_) {}
-            cajaSocioUnsub = onValue(qRef, (snap) => {
+            
+            const handleData = (snap) => {
                 const data = snap.val() || {};
                 const all = Object.entries(data).map(([id, val]) => ({ id, ...val }));
                 socioCajaMovs = all.filter(m => m && m.esCuota && m.estado !== 'revertido' && (
                     (m.cuotaOriginal && m.cuotaOriginal.socioId === (currentUser && currentUser.id)) ||
                     (m.socioId && m.socioId === (currentUser && currentUser.id))
                 ));
+                console.log(`[Caja-Socio] ${socioCajaMovs.length} movimientos de cuotas encontrados.`);
                 renderSocioDashboard();
-            }, (_) => {});
+            };
+
+            try {
+                const snap = await get(qRef);
+                if (snap.exists()) {
+                    handleData(snap);
+                } else {
+                    socioCajaMovs = [];
+                    renderSocioDashboard();
+                }
+            } catch(err) {
+                console.warn("[Caja-Socio] Error en lectura global de movimientos, es posible que las reglas lo restrinjan.", err);
+                // Si falla la lectura global, el socio no podrá ver sus cuotas pagadas 
+                // a menos que las reglas permitan una consulta específica o lectura pública.
+                socioCajaMovs = [];
+                renderSocioDashboard();
+            }
+
+            cajaSocioUnsub = onValue(qRef, handleData, (err) => {
+                console.error("[Caja-Socio] Error en suscripción de movimientos:", err);
+            });
         }
 
         window.syncSociosToAuth = async () => {
@@ -1506,7 +1551,7 @@
                 } catch(_) {}
                 try {
                     const newRef = push(ref(dbCaja, 'movimientos'));
-                    await set(newRef, {
+                    const pagoData = {
                         fecha: fechaPago,
                         descripcion: `Cobro cuota: ${cuota.concepto} - ${socio ? (socio.nombres + ' ' + socio.apellidos) : 'Socio Eliminado'}`,
                         monto: cuota.monto,
@@ -1520,7 +1565,18 @@
                             concepto: cuota.concepto,
                             fechaEmision: cuota.fecha || new Date().toISOString().split('T')[0]
                         }
-                    });
+                    };
+                    await set(newRef, pagoData);
+                    
+                    // Sincronizar con la DB Principal para que el socio pueda ver su historial sin depender de permisos de Caja
+                    try {
+                        await set(ref(db, `pagosSocios/${cuota.socioId}/${newRef.key}`), {
+                            ...pagoData,
+                            cajaMovId: newRef.key
+                        });
+                    } catch(errSync) {
+                        console.error("Error al sincronizar pago con DB Principal:", errSync);
+                    }
                     
                     const parts = numeroRecibo.split('-');
                     const lastPart = parts[parts.length - 1];
@@ -1685,6 +1741,13 @@
                     revertidoPor: (currentUser && (currentUser.nombre || `${currentUser.nombres || ''} ${currentUser.apellidos || ''}`.trim())) || 'Sistema',
                     fechaReversion: new Date().toISOString()
                 });
+
+                // También revertir en la DB Principal
+                try {
+                    await remove(ref(db, `pagosSocios/${mov.cuotaOriginal.socioId}/${movId}`));
+                } catch(errSync) {
+                    console.error("Error al revertir pago en DB Principal:", errSync);
+                }
 
                 showToast("Pago revertido. La cuota vuelve a estar pendiente.", "success");
                 renderCuotas();
