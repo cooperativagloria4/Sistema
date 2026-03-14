@@ -2344,7 +2344,7 @@
             const boxWidth = 100;
             const boxHeight = 25;
             const boxX = pageWidth - margin - boxWidth;
-            const boxY = 25;
+            const boxY = 38; // Bajado de 25 a 38 para alinear verticalmente con el texto de la cooperativa (y=50)
 
             doc.setFillColor(191, 219, 254);
             doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 8, 8, 'F');
@@ -2360,7 +2360,7 @@
             doc.text(`Nº: ${data.numeroRecibo}`, boxX + boxWidth / 2, boxY + boxHeight + 12, { align: 'center' });
 
             // --- CUERPO DEL RECIBO (LEFT) ---
-            y = 90;
+            y = 100; // Ajustado de 90 a 100 para dar aire tras la cabecera
             const labelX = margin;
             const valueX = margin + 100;
             const lineHeight = 18;
@@ -2383,7 +2383,7 @@
             });
 
             // --- LÍNEA DE FIRMA (CENTRO INFERIOR) ---
-            y += 40;
+            y += 20; // Reducido significativamente el espacio (aprox 5 líneas menos que el anterior y+40)
             doc.setDrawColor(0, 0, 0);
             doc.line(pageWidth / 2 - 100, y, pageWidth / 2 + 100, y);
             y += 15;
