@@ -2451,9 +2451,9 @@
                 doc.setGState(new doc.GState({ opacity: 0.25 })); // Opacidad aumentada a 0.25
             } catch(e) {}
 
-            // Dibujamos el sello bajado 3 líneas (aprox +50pt en Y respecto a la versión anterior)
-            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 260, { align: 'center', angle: 35 });
-            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, 335, { align: 'center', angle: 35 });
+            // Dibujamos el sello subido 1 línea (aprox -20pt en Y respecto a la versión anterior)
+            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 230, { align: 'center', angle: 35 });
+            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, 305, { align: 'center', angle: 35 });
 
             try {
                 doc.restoreGraphicsState();
@@ -3010,6 +3010,84 @@
                 }
             });
         }
+
+        window.generarTodosLosCarnets = async () => {
+            const { jsPDF } = window.jspdf || {};
+            if (!jsPDF) return;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            
+            // Configuración del carnet (tamaño estándar tarjeta ID-1: 85.6 x 54 mm)
+            const cardW = 86;
+            const cardH = 54;
+            const margin = 10;
+            let x = margin;
+            let y = margin;
+            const cardsPerRow = 2;
+            const cardsPerCol = 4;
+            
+            showToast("Generando carnets...", "info");
+
+            const sociosActivos = sociosData.filter(s => String(s.estado || '').toLowerCase() !== 'inactivo');
+            
+            for (let i = 0; i < sociosActivos.length; i++) {
+                const s = sociosActivos[i];
+                
+                // Dibujar borde del carnet
+                doc.setDrawColor(200);
+                doc.roundedRect(x, y, cardW, cardH, 3, 3);
+                
+                // Header del carnet
+                doc.setFillColor(15, 63, 34); // Color institucional
+                doc.roundedRect(x, y, cardW, 12, 3, 3, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text('COOPERATIVA GLORIA N° 4', x + cardW / 2, y + 5, { align: 'center' });
+                doc.setFontSize(6);
+                doc.text('CARNET DE SOCIO', x + cardW / 2, y + 9, { align: 'center' });
+                
+                // Datos del Socio
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(9);
+                doc.text(`${s.apellidos}, ${s.nombres}`, x + 5, y + 20);
+                
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`LOTE: ${s.lote || '-'}`, x + 5, y + 28);
+                doc.text(`PISO: ${s.piso || '-'}`, x + 5, y + 33);
+                doc.text(`ID: ${s.id}`, x + 5, y + 38);
+                
+                // QR pequeño para validación rápida
+                try {
+                    const qrData = `SOCIO: ${s.apellidos}\nLOTE: ${s.lote}\nCOOP GLORIA N4`;
+                    const qr = new QRious({ value: qrData, size: 60 });
+                    doc.addImage(qr.toDataURL(), 'PNG', x + cardW - 22, y + 15, 18, 18);
+                } catch(e) {}
+                
+                // Pie del carnet
+                doc.setFontSize(5);
+                doc.setTextColor(150);
+                doc.text('Documento de identificación interna', x + cardW / 2, y + cardH - 3, { align: 'center' });
+
+                // Calcular posición de la siguiente tarjeta
+                if ((i + 1) % cardsPerRow === 0) {
+                    x = margin;
+                    y += cardH + 5;
+                } else {
+                    x += cardW + 5;
+                }
+                
+                // Nueva página si es necesario
+                if ((i + 1) % (cardsPerRow * cardsPerCol) === 0 && i < sociosActivos.length - 1) {
+                    doc.addPage();
+                    x = margin;
+                    y = margin;
+                }
+            }
+            
+            doc.save('Carnets_Socios_GloriaN4.pdf');
+            showToast("Carnets generados con éxito", "success");
+        };
 
         window.toggleLoginPass = (btn) => {
             const input = document.getElementById('login-pass');
