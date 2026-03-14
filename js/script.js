@@ -583,6 +583,18 @@
                 if(currentUser.role === 'root' || (currentUser.role === 'admin' && currentUser.permisos?.votaciones)) renderVotaciones();
                 if(currentUser.role === 'socio') renderSocioDashboard();
             });
+            // Escuchar configuración de correlativos en Caja
+            onValue(ref(dbCaja, 'config/correlativos'), (snap) => {
+                const val = snap.val() || {};
+                if (!configData.correlativos) configData.correlativos = {};
+                configData.correlativos = { ...configData.correlativos, ...val };
+                if (currentUser.role === 'root' && !document.getElementById('sec-sistema').classList.contains('hidden-section')) {
+                    const nextInput = document.getElementById('cfg-recibo-next');
+                    const padSelect = document.getElementById('cfg-recibo-padding');
+                    if (nextInput) nextInput.value = val.recibosNext || '';
+                    if (padSelect) padSelect.value = val.padding || '0';
+                }
+            });
             ensureCajaSubscription();
             if (currentUser.role === 'socio') ensureCajaSubscriptionForSocio();
         }
@@ -1390,7 +1402,10 @@
                 const storedNext = parseInt(String(localStorage.getItem('cajaReciboNext') || '0'), 10);
                 const candidateBase = Math.max(confVal, maxMovRemote, maxMovLocal, isFinite(storedNext) && storedNext > 0 ? storedNext : 0);
                 const candidate = (candidateBase > 0) ? (candidateBase + 1) : 1;
-                sugerido = String(candidate > 0 ? candidate : 1);
+                
+                // Aplicar padding (ceros a la izquierda)
+                const padLength = parseInt((configData.correlativos && configData.correlativos.padding) || '0', 10);
+                sugerido = String(candidate).padStart(padLength, '0');
             } catch(_) { sugerido = '1'; }
             const body = `<div class="space-y-3">
                 <div><label class="block text-xs font-bold uppercase mb-1">Número de Recibo Físico</label><input id="recibo-num" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-emerald-500" value="${sugerido}" placeholder="Ingrese el número de recibo"></div>
@@ -1876,7 +1891,29 @@
             });
             const chk = document.getElementById('cfg-voto-morosos');
             if (chk) chk.checked = !!(configData.votaciones && configData.votaciones.restringirMorosos);
+            
+            // Cargar configuración de recibos
+            try {
+                const nextInput = document.getElementById('cfg-recibo-next');
+                const padSelect = document.getElementById('cfg-recibo-padding');
+                const nextVal = (configData.correlativos && configData.correlativos.recibosNext) || '';
+                const padVal = (configData.correlativos && configData.correlativos.padding) || '0';
+                if(nextInput) nextInput.value = nextVal;
+                if(padSelect) padSelect.value = padVal;
+            } catch(_) {}
         }
+        window.guardarConfigRecibos = async () => {
+            const next = parseInt(document.getElementById('cfg-recibo-next').value, 10);
+            const padding = document.getElementById('cfg-recibo-padding').value;
+            if (isNaN(next)) return showToast("El próximo número debe ser válido", "warning");
+            try {
+                // Guardar en la DB de Caja para consistencia con los movimientos
+                await update(ref(dbCaja, 'config/correlativos'), { recibosNext: next, padding });
+                showToast("Correlativo actualizado correctamente", "success");
+            } catch(e) {
+                showToast("Error al actualizar configuración", "error");
+            }
+        };
         window.toggleRestriccionVoto = async (checked) => { await update(ref(db, 'config/votaciones'), { restringirMorosos: checked }); };
         window.limpiarBasePrincipal = async () => {
             if(!confirm("¡PELIGRO! Esta acción eliminará permanentemente todas las cuotas pendientes, asambleas y votaciones. Los socios, administradores y movimientos de CAJA NO serán afectados.\n\n¿Estás completamente seguro de continuar?")) return;
