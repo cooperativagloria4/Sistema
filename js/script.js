@@ -453,7 +453,7 @@
                 window.scrollTo(0, 0);
                 document.documentElement.scrollTop = 0;
                 document.body.scrollTop = 0;
-                // Importante: El contenedor con scroll es <main>
+                // Importante: El contenedor con scroll suele ser <main> o el body
                 const main = document.querySelector('main');
                 if (main) main.scrollTop = 0;
                 // También intentar llevar el header a la vista
@@ -512,9 +512,37 @@
         };
         window.toggleSidebar = () => {
             const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
             if (!sidebar) return;
-            sidebar.classList.toggle('hidden');
+            
+            const isHidden = sidebar.classList.contains('-translate-x-full');
+            if (isHidden) {
+                // Abrir
+                sidebar.classList.remove('-translate-x-full');
+                if (backdrop) {
+                    backdrop.classList.remove('hidden');
+                    // Forzar reflow para la transición de opacidad
+                    backdrop.offsetHeight;
+                    backdrop.classList.remove('opacity-0');
+                    backdrop.classList.add('opacity-100');
+                }
+                document.body.style.overflow = 'hidden';
+            } else {
+                // Cerrar
+                sidebar.classList.add('-translate-x-full');
+                if (backdrop) {
+                    backdrop.classList.remove('opacity-100');
+                    backdrop.classList.add('opacity-0');
+                    setTimeout(() => {
+                        if (sidebar.classList.contains('-translate-x-full')) {
+                            backdrop.classList.add('hidden');
+                        }
+                    }, 300);
+                }
+                document.body.style.overflow = '';
+            }
         };
+
         window.showSection = (id) => {
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden-section'));
             const can = (perm) => currentUser && (currentUser.role === 'root' || (currentUser.role === 'admin' && currentUser.permisos && currentUser.permisos[perm]));
@@ -549,10 +577,12 @@
             if (main) main.scrollTop = 0;
             window.scrollTo(0, 0);
 
-            // Cerrar el menú lateral automáticamente en móviles
+            // Cerrar el menú lateral automáticamente en móviles si está abierto
             if (window.innerWidth < 768) {
                 const sidebar = document.getElementById('sidebar');
-                if (sidebar) sidebar.classList.add('hidden');
+                if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+                    toggleSidebar();
+                }
             }
         };
 
