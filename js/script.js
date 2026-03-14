@@ -2442,18 +2442,18 @@
 
             // --- MARCA DE AGUA (Sello de Seguridad) ---
             // Reposicionado para que la base del sello coincida con la línea de corte (Y=300 aprox)
-            doc.setTextColor(220, 220, 220); 
+            doc.setTextColor(200, 200, 200); // Un tono de gris un poco más oscuro para mayor visibilidad
             doc.setFontSize(40);
             doc.setFont('helvetica', 'bold');
             
             try {
                 doc.saveGraphicsState();
-                doc.setGState(new doc.GState({ opacity: 0.18 }));
+                doc.setGState(new doc.GState({ opacity: 0.25 })); // Opacidad aumentada a 0.25
             } catch(e) {}
 
-            // Dibujamos el sello fluyendo hacia arriba desde la línea de corte
-            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 210, { align: 'center', angle: 35 });
-            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, 285, { align: 'center', angle: 35 });
+            // Dibujamos el sello bajado 3 líneas (aprox +50pt en Y respecto a la versión anterior)
+            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 260, { align: 'center', angle: 35 });
+            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, 335, { align: 'center', angle: 35 });
 
             try {
                 doc.restoreGraphicsState();
