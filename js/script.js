@@ -1539,6 +1539,7 @@
                     
                     try { 
                         await window.generarPDFRecibo({
+                            id: newRef.key, // Pasamos el ID real de la transacción
                             numeroRecibo,
                             fechaPago,
                             nombreSocio,
@@ -2440,13 +2441,13 @@
             let y = 30;
 
             // --- MARCA DE AGUA (Sello de Seguridad) ---
-            doc.setTextColor(240, 240, 240);
-            doc.setFontSize(40);
+            doc.setTextColor(200, 200, 200); // Color un poco más oscuro
+            doc.setFontSize(45);
             doc.setFont('helvetica', 'bold');
             doc.saveGraphicsState();
-            doc.setGState(new doc.GState({ opacity: 0.1 }));
-            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 180, { align: 'center', angle: 45 });
-            doc.text('URB. GLORIA N° 4', pageWidth / 2, 280, { align: 'center', angle: 45 });
+            doc.setGState(new doc.GState({ opacity: 0.15 })); // Opacidad un poco mayor
+            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 220, { align: 'center', angle: 45 });
+            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, 340, { align: 'center', angle: 45 });
             doc.restoreGraphicsState();
 
             // --- CABECERA CENTRADA ---
