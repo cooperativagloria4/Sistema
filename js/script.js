@@ -2374,13 +2374,13 @@
             });
 
             // --- LÍNEA DE FIRMA (CENTRO INFERIOR) ---
-            y += 60; // Reducido el espacio para la firma
+            y += 40; // Espacio reducido significativamente (3 líneas menos aprox)
             doc.setDrawColor(200, 200, 200);
             doc.line(pageWidth / 2 - 100, y, pageWidth / 2 + 100, y);
             y += 15;
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text('FIRMA DEL TESORERO', pageWidth / 2, y, { align: 'center' });
+            doc.text('FIRMA', pageWidth / 2, y, { align: 'center' });
 
             // Pie de página
             const now = new Date();
