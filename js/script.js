@@ -450,7 +450,7 @@
 
             // Función robusta para resetear el scroll
             const forceScrollTop = () => {
-                window.scrollTo(0, 0);
+                window.scrollTo({top: 0, left: 0, behavior: 'instant'});
                 document.documentElement.scrollTop = 0;
                 document.body.scrollTop = 0;
                 const main = document.querySelector('main');
@@ -571,9 +571,19 @@
             if(id === 'sistema') renderSistema();
 
             // Resetear scroll al cambiar de sección (especialmente en móvil)
-            const main = document.querySelector('main');
-            if (main) main.scrollTop = 0;
-            window.scrollTo(0, 0);
+            const forceScrollTop = () => {
+                window.scrollTo({top: 0, left: 0, behavior: 'instant'});
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+                const main = document.querySelector('main');
+                if (main) main.scrollTop = 0;
+                const header = document.querySelector('header');
+                if (header) header.scrollIntoView({ behavior: 'instant', block: 'start' });
+            };
+
+            forceScrollTop();
+            setTimeout(forceScrollTop, 50);
+            setTimeout(forceScrollTop, 150);
 
             // Cerrar el menú lateral automáticamente en móviles si está abierto
             if (window.innerWidth < 768) {

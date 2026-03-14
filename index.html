@@ -11,10 +11,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=3.6">
+    <link rel="stylesheet" href="css/style.css?v=4.0">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 min-h-screen overflow-hidden">
 
     <div id="toast-container"></div>
 
@@ -45,24 +45,24 @@
                         <i class="fa-solid fa-eye"></i>
                     </button>
                 </div>
-                <button onclick="handleLogin()" class="w-full bg-[#14532d] hover:bg-[#0f3f22] text-white py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-transform duration-150 hover:-translate-y-0.5">Ingresar</button>
+                <button onclick="handleLogin()" class="w-full bg="#14532d" hover:bg="#0f3f22" text-white py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-transform duration-150 hover:-translate-y-0.5">Ingresar</button>
             </div>
             <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden">Credenciales inválidas o cuenta inactiva</p>
         </div>
         <!-- Versión del Sistema en Login (Fuera del recuadro) -->
         <div class="mt-4 text-center">
-            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest opacity-60">Sistema Cooperativa Gloria N°4 v.3</p>
-            <p class="text-[9px] text-slate-500 mt-0.5 opacity-60">Versión 3.6 (Estable)</p>
+            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest opacity-60">Sistema Cooperativa Gloria N°4 v.4</p>
+            <p class="text-[9px] text-slate-500 mt-0.5 opacity-60">Versión 4.0 (Estable)</p>
         </div>
     </div>
 
     <!-- Main App -->
-    <div id="app-content" class="hidden flex flex-col h-screen">
+    <div id="app-content" class="hidden flex flex-col h-screen h-[100dvh]">
         <!-- Header -->
         <header class="bg-white border-b px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center no-print z-20 gap-2">
             <div class="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
                 <h2 class="text-[11px] leading-tight sm:text-lg md:text-xl font-bold text-[#0f3f22] break-words">Cooperativa Gloria N°4</h2>
-                <span id="role-badge" class="flex-shrink-0 px-2 py-0.5 rounded-full text-[9px] sm:text-xs font-bold uppercase whitespace-nowrap"></span>
+                <span id="role-badge" class="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold uppercase whitespace-nowrap"></span>
                 <!-- Botón hamburguesa solo en móvil -->
                 <button
                     type="button"
@@ -125,8 +125,8 @@
 
                 <!-- Versión del Sistema -->
                 <div class="pt-6 mt-6 border-t border-white/10 text-center">
-                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Sistema Cooperativa Gloria N°4 v.3</p>
-                    <p class="text-[9px] text-slate-600 mt-1">Versión 3.6 (Estable)</p>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Sistema Cooperativa Gloria N°4 v.4</p>
+                    <p class="text-[9px] text-slate-600 mt-1">Versión 4.0 (Estable)</p>
                 </div>
             </nav>
 
@@ -536,6 +536,6 @@
     <!-- Table oculta para exportar votaciones a excel -->
     <table id="temp-votaciones-excel" style="display:none;"></table>
 
-    <script type="module" src="js/script.js?v=3.6"></script>
+    <script type="module" src="js/script.js?v=4.0"></script>
 </body>
 </html>
