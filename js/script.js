@@ -1612,17 +1612,26 @@
             let totalIn = 0, totalOut = 0;
             filtrados.forEach(m => {
                 const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50 text-sm transition";
-                if(m.tipo === 'ingreso') totalIn += parseFloat(m.monto); else totalOut += parseFloat(m.monto);
+                const esRevertido = m.estado === 'revertido';
+                tr.className = `border-b hover:bg-gray-50 text-sm transition ${esRevertido ? 'opacity-50 grayscale bg-red-50' : ''}`;
+                
+                if (!esRevertido) {
+                    if(m.tipo === 'ingreso') totalIn += parseFloat(m.monto); 
+                    else totalOut += parseFloat(m.monto);
+                }
+
                 tr.innerHTML = `
-                    <td class="p-4 text-xs text-gray-500">${m.fecha}</td>
-                    <td class="p-4 font-bold text-slate-700">${m.numeroRecibo || '-'}</td>
-                    <td class="p-4 text-sm text-slate-700">${m.descripcion}</td>
-                    <td class="p-4 text-xs text-slate-500">${m.registradoPor || '-'}</td>
-                    <td class="p-4 font-bold ${m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}">S/ ${parseFloat(m.monto).toFixed(2)}</td>
-                    <td class="p-4 uppercase text-[10px] font-black tracking-wider">${m.tipo}</td>
+                    <td class="p-4 text-xs text-gray-500 ${esRevertido ? 'line-through' : ''}">${m.fecha}</td>
+                    <td class="p-4 font-bold text-slate-700 ${esRevertido ? 'line-through' : ''}">${m.numeroRecibo || '-'}</td>
+                    <td class="p-4 text-sm text-slate-700">
+                        ${esRevertido ? '<span class="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded mr-2 font-black">REVERTIDO</span>' : ''}
+                        <span class="${esRevertido ? 'line-through text-gray-400' : ''}">${m.descripcion}</span>
+                    </td>
+                    <td class="p-4 text-xs text-gray-500">${m.registradoPor || '-'}</td>
+                    <td class="p-4 font-bold ${esRevertido ? 'text-gray-400 line-through' : (m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600')}">S/ ${parseFloat(m.monto).toFixed(2)}</td>
+                    <td class="p-4 uppercase text-[10px] font-black tracking-wider ${esRevertido ? 'text-gray-400' : ''}">${m.tipo}</td>
                     <td class="p-4">
-                        ${m.esCuota
+                        ${m.esCuota && !esRevertido
                             ? (currentUser && currentUser.role === 'root'
                                 ? `<button onclick="revertirACuota('${m.id}')" class="text-xs font-bold text-red-500 hover:text-red-700 underline">Revertir</button>`
                                 : '-')
@@ -1661,8 +1670,15 @@
                     monto: mov.monto,
                     fecha: mov.cuotaOriginal.fechaEmision
                 });
-                await remove(ref(dbCaja, `movimientos/${movId}`));
-                allCajaMovs = allCajaMovs.filter(x => x.id !== movId);
+                
+                // En lugar de eliminar, marcamos como revertido para auditoría y validación QR
+                await update(ref(dbCaja, `movimientos/${movId}`), { 
+                    estado: 'revertido',
+                    revertidoPor: (currentUser && (currentUser.nombre || `${currentUser.nombres || ''} ${currentUser.apellidos || ''}`.trim())) || 'Sistema',
+                    fechaReversion: new Date().toISOString()
+                });
+
+                showToast("Pago revertido. La cuota vuelve a estar pendiente.", "success");
                 renderCuotas();
                 renderCaja();
             }
@@ -2524,9 +2540,12 @@
 
             // --- CÓDIGO QR DE VALIDACIÓN ---
             try {
-                const qrData = `COOPERATIVA GLORIA N° 4\nRecibo: ${data.numeroRecibo}\nSocio: ${data.nombreSocio}\nMonto: S/ ${data.monto}\nFecha: ${fechaALetras(data.fechaPago)}\nID: ${data.id || 'N/A'}`;
+                // Generar URL de validación dinámica (Apunta al sistema con el ID del recibo)
+                const currentUrl = window.location.origin + window.location.pathname;
+                const validationUrl = `${currentUrl}?validar=${data.id}`;
+                
                 const qr = new QRious({
-                    value: qrData,
+                    value: validationUrl,
                     size: 100,
                     level: 'M'
                 });
@@ -3019,4 +3038,123 @@
                 if (eye) { eye.classList.remove('fa-eye-slash'); eye.classList.add('fa-eye'); }
             }
         };
+
+        // ========================================================
+        // VALIDACIÓN DE RECIBOS POR QR (PÚBLICO)
+        // ========================================================
+        window.validarReciboQR = async (id) => {
+            if (!id) return;
+            
+            showToast("Verificando recibo en la base de datos...", "info");
+            
+            try {
+                // Buscamos el movimiento en la base de datos de Caja
+                const movRef = ref(dbCaja, `movimientos/${id}`);
+                const snap = await get(movRef);
+                
+                if (snap.exists()) {
+                    const m = snap.val();
+                    const esValido = m.estado !== 'revertido';
+                    
+                    const statusHtml = esValido 
+                        ? `<div class="bg-green-100 text-green-800 p-5 rounded-xl flex flex-col items-center text-center gap-3 mb-4 border border-green-200">
+                            <i class="fas fa-check-circle text-5xl text-green-600"></i>
+                            <div>
+                                <p class="font-black text-xl">RECIBO VÁLIDO</p>
+                                <p class="text-xs opacity-80 uppercase tracking-widest font-bold">Documento Verificado</p>
+                            </div>
+                           </div>`
+                        : `<div class="bg-red-100 text-red-800 p-5 rounded-xl flex flex-col items-center text-center gap-3 mb-4 border border-red-200">
+                            <i class="fas fa-times-circle text-5xl text-red-600"></i>
+                            <div>
+                                <p class="font-black text-xl">RECIBO INVÁLIDO</p>
+                                <p class="text-xs opacity-80 uppercase tracking-widest font-bold">Pago Revertido / Anulado</p>
+                            </div>
+                           </div>`;
+
+                    const body = `
+                        <div class="space-y-4">
+                            ${statusHtml}
+                            
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                                <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Número de Recibo</span>
+                                    <span class="font-bold text-slate-700">${m.numeroRecibo || '-'}</span>
+                                </div>
+                                <div class="flex flex-col gap-1 border-b border-slate-200 pb-2">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Socio</span>
+                                    <span class="font-bold text-blue-800 text-lg leading-tight">${m.descripcion.includes(' - ') ? m.descripcion.split(' - ')[1] : m.descripcion}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 border-b border-slate-200 pb-2">
+                                    <div>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase block">Fecha Pago</span>
+                                        <span class="font-bold text-slate-700">${m.fecha || '-'}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase block">Monto Total</span>
+                                        <span class="font-black text-green-700 text-xl">S/ ${parseFloat(m.monto || 0).toFixed(2)}</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Concepto</span>
+                                    <span class="font-medium text-slate-600 text-sm">${m.descripcion.includes(' - ') ? m.descripcion.split(' - ')[0] : 'Pago Registrado'}</span>
+                                </div>
+                            </div>
+
+                            <div class="px-2">
+                                ${esValido ? `
+                                    <div class="flex justify-between items-center text-[10px] text-slate-400">
+                                        <span class="font-bold uppercase">Registrado por:</span>
+                                        <span class="font-medium italic">${m.registradoPor || 'Sistema'}</span>
+                                    </div>
+                                ` : `
+                                    <div class="flex justify-between items-center text-[10px] text-red-500 bg-red-50 p-2 rounded-lg border border-red-100">
+                                        <span class="font-bold uppercase">Revertido por:</span>
+                                        <span class="font-bold">${m.revertidoPor || 'Administración'} el ${m.fechaReversion ? m.fechaReversion.split('T')[0] : ''}</span>
+                                    </div>
+                                `}
+                            </div>
+                            
+                            <div class="pt-4 border-t border-slate-100">
+                                <p class="text-[9px] text-slate-400 text-center font-mono break-all">ID: ${id}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    openModal("Verificación Oficial de Recibo", body);
+                } else {
+                    const body = `
+                        <div class="text-center py-8 space-y-4">
+                            <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
+                                <i class="fas fa-search text-amber-500 text-4xl"></i>
+                            </div>
+                            <h3 class="text-xl font-black text-slate-800">Recibo no encontrado</h3>
+                            <p class="text-sm text-slate-500 leading-relaxed px-4">
+                                El código escaneado no coincide con ningún registro en nuestra base de datos oficial. 
+                                <br><br>
+                                <span class="text-amber-600 font-bold bg-amber-50 px-2 py-1 rounded">⚠️ Este documento podría no ser auténtico.</span>
+                            </p>
+                        </div>
+                    `;
+                    openModal("Alerta de Seguridad", body);
+                }
+            } catch (e) {
+                console.error("Error al validar QR:", e);
+                showToast("Error de conexión al servidor de validación", "error");
+            }
+        };
+
+        // Detectar parámetro de validación en la URL (Se ejecuta al cargar el script)
+        (function checkValidationUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const idValidar = params.get('validar');
+            if (idValidar) {
+                // Pequeño retardo para asegurar que el DOM y los estilos están listos
+                setTimeout(() => {
+                    window.validarReciboQR(idValidar);
+                    // Limpiamos la URL para que no vuelva a saltar el modal al refrescar
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }, 800);
+            }
+        })();
 
