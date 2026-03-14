@@ -430,8 +430,8 @@
             document.getElementById('app-content').classList.remove('hidden');
             const userFullName = user.nombre || `${user.nombres || ''} ${user.apellidos || ''}`;
             document.getElementById('user-display').innerText = userFullName;
-            const userSidebarDisplay = document.getElementById('user-display-sidebar');
-            if (userSidebarDisplay) userSidebarDisplay.innerText = userFullName;
+            const userDisplayMobile = document.getElementById('user-display-mobile');
+            if (userDisplayMobile) userDisplayMobile.innerText = userFullName;
             
             console.log("Login exitoso para:", user.usuario || user.email || '');
             
@@ -444,10 +444,10 @@
                 badge.className = `${roleClass} px-2.5 py-0.5 rounded-full text-xs font-bold uppercase whitespace-nowrap`;
             }
 
-            const badgeSidebar = document.getElementById('role-badge-sidebar');
-            if (badgeSidebar) {
-                badgeSidebar.innerText = roleText;
-                badgeSidebar.className = `${roleClass} mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase`;
+            const badgeMobile = document.getElementById('role-badge-mobile');
+            if (badgeMobile) {
+                badgeMobile.innerText = roleText;
+                badgeMobile.className = `${roleClass} mt-0.5 px-2 py-0.5 rounded-full text-[7px] font-bold uppercase whitespace-nowrap`;
             }
 
             limpiarInterfaz();
