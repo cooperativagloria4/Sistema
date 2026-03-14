@@ -1508,7 +1508,7 @@
                     const newRef = push(ref(dbCaja, 'movimientos'));
                     await set(newRef, {
                         fecha: fechaPago,
-                        descripcion: `Cobro cuota: ${cuota.concepto} - ${socio ? socio.apellidos : 'Socio Eliminado'}`,
+                        descripcion: `Cobro cuota: ${cuota.concepto} - ${socio ? (socio.nombres + ' ' + socio.apellidos) : 'Socio Eliminado'}`,
                         monto: cuota.monto,
                         tipo: 'ingreso',
                         esCuota: true,
@@ -3130,7 +3130,7 @@
                         </div>
                     `;
                     
-                    openModal("Verificación Oficial de Recibo", body);
+                    openModal("Verificación Oficial de Recibo", body, closeModal);
                 } else {
                     const body = `
                         <div class="text-center py-8 space-y-4">
@@ -3145,7 +3145,7 @@
                             </p>
                         </div>
                     `;
-                    openModal("Alerta de Seguridad", body);
+                    openModal("Alerta de Seguridad", body, closeModal);
                 }
             } catch (e) {
                 console.error("Error al validar QR:", e);
@@ -3168,7 +3168,7 @@
                             </div>
                         </div>
                     `;
-                    openModal("Configuración Requerida", body);
+                    openModal("Configuración Requerida", body, closeModal);
                 } else {
                     showToast("Error de conexión al servidor de validación", "error");
                 }
