@@ -584,17 +584,19 @@
                 if(currentUser.role === 'socio') renderSocioDashboard();
             });
             // Escuchar configuración de correlativos en Caja
-            onValue(ref(dbCaja, 'config/correlativos'), (snap) => {
-                const val = snap.val() || {};
-                if (!configData.correlativos) configData.correlativos = {};
-                configData.correlativos = { ...configData.correlativos, ...val };
-                if (currentUser.role === 'root' && !document.getElementById('sec-sistema').classList.contains('hidden-section')) {
-                    const nextInput = document.getElementById('cfg-recibo-next');
-                    const padSelect = document.getElementById('cfg-recibo-padding');
-                    if (nextInput) nextInput.value = val.recibosNext || '';
-                    if (padSelect) padSelect.value = val.padding || '0';
-                }
-            });
+             onValue(ref(dbCaja, 'config/correlativos'), (snap) => {
+                 const val = snap.val() || {};
+                 if (!configData.correlativos) configData.correlativos = {};
+                 configData.correlativos = { ...configData.correlativos, ...val };
+                 if (currentUser.role === 'root' && !document.getElementById('sec-sistema').classList.contains('hidden-section')) {
+                     const prefixInput = document.getElementById('cfg-recibo-prefix');
+                     const nextInput = document.getElementById('cfg-recibo-next');
+                     const padSelect = document.getElementById('cfg-recibo-padding');
+                     if (prefixInput) prefixInput.value = val.prefix || '';
+                     if (nextInput) nextInput.value = val.recibosNext || '';
+                     if (padSelect) padSelect.value = val.padding || '0';
+                 }
+             });
             ensureCajaSubscription();
             if (currentUser.role === 'socio') ensureCajaSubscriptionForSocio();
         }
@@ -1403,9 +1405,12 @@
                 const candidateBase = Math.max(confVal, maxMovRemote, maxMovLocal, isFinite(storedNext) && storedNext > 0 ? storedNext : 0);
                 const candidate = (candidateBase > 0) ? (candidateBase + 1) : 1;
                 
-                // Aplicar padding (ceros a la izquierda)
+                // Aplicar Prefijo y Padding (ceros a la izquierda)
+                const prefix = (configData.correlativos && configData.correlativos.prefix) || '';
                 const padLength = parseInt((configData.correlativos && configData.correlativos.padding) || '0', 10);
-                sugerido = String(candidate).padStart(padLength, '0');
+                const numStr = String(candidate).padStart(padLength, '0');
+                
+                sugerido = prefix ? `${prefix}-${numStr}` : numStr;
             } catch(_) { sugerido = '1'; }
             const body = `<div class="space-y-3">
                 <div><label class="block text-xs font-bold uppercase mb-1">Número de Recibo Físico</label><input id="recibo-num" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-emerald-500" value="${sugerido}" placeholder="Ingrese el número de recibo"></div>
@@ -1894,21 +1899,25 @@
             
             // Cargar configuración de recibos
             try {
+                const prefixInput = document.getElementById('cfg-recibo-prefix');
                 const nextInput = document.getElementById('cfg-recibo-next');
                 const padSelect = document.getElementById('cfg-recibo-padding');
+                const prefixVal = (configData.correlativos && configData.correlativos.prefix) || '';
                 const nextVal = (configData.correlativos && configData.correlativos.recibosNext) || '';
                 const padVal = (configData.correlativos && configData.correlativos.padding) || '0';
+                if(prefixInput) prefixInput.value = prefixVal;
                 if(nextInput) nextInput.value = nextVal;
                 if(padSelect) padSelect.value = padVal;
             } catch(_) {}
         }
         window.guardarConfigRecibos = async () => {
+            const prefix = document.getElementById('cfg-recibo-prefix').value.trim();
             const next = parseInt(document.getElementById('cfg-recibo-next').value, 10);
             const padding = document.getElementById('cfg-recibo-padding').value;
             if (isNaN(next)) return showToast("El próximo número debe ser válido", "warning");
             try {
                 // Guardar en la DB de Caja para consistencia con los movimientos
-                await update(ref(dbCaja, 'config/correlativos'), { recibosNext: next, padding });
+                await update(ref(dbCaja, 'config/correlativos'), { prefix, recibosNext: next, padding });
                 showToast("Correlativo actualizado correctamente", "success");
             } catch(e) {
                 showToast("Error al actualizar configuración", "error");
