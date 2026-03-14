@@ -2441,9 +2441,9 @@
             let y = 30;
 
             // --- MARCA DE AGUA (Sello de Seguridad) ---
-            // Reposicionado para estar centrado en el CUERPO del recibo (antes de la línea de corte)
+            // Reposicionado para que la base del sello coincida con la línea de corte (Y=300 aprox)
             doc.setTextColor(220, 220, 220); 
-            doc.setFontSize(40); // Reducido un poco para que quepa mejor arriba
+            doc.setFontSize(40);
             doc.setFont('helvetica', 'bold');
             
             try {
@@ -2451,9 +2451,9 @@
                 doc.setGState(new doc.GState({ opacity: 0.18 }));
             } catch(e) {}
 
-            // Dibujamos en la zona superior/media del recibo (entre Y=150 y Y=250)
-            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 160, { align: 'center', angle: 35 });
-            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, 240, { align: 'center', angle: 35 });
+            // Dibujamos el sello fluyendo hacia arriba desde la línea de corte
+            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 210, { align: 'center', angle: 35 });
+            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, 285, { align: 'center', angle: 35 });
 
             try {
                 doc.restoreGraphicsState();
