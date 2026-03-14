@@ -417,23 +417,12 @@
         }
 
         function loginSuccess(user) {
-            try { 
-                console.clear(); 
-                if ('scrollRestoration' in history) {
-                    history.scrollRestoration = 'manual';
-                }
-            } catch(_) {}
+            try { console.clear(); } catch(_) {}
             currentUser = user;
             window.currentUser = user;
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-content').classList.remove('hidden');
-            
-            const name = user.nombre || `${user.nombres || ''} ${user.apellidos || ''}`;
-            const display = document.getElementById('user-display');
-            if (display) display.innerText = name;
-            const mobileDisplay = document.getElementById('user-display-mobile');
-            if (mobileDisplay) mobileDisplay.innerText = name;
-
+            document.getElementById('user-display').innerText = user.nombre || `${user.nombres || ''} ${user.apellidos || ''}`;
             console.log("Login exitoso para:", user.usuario || user.email || '');
             
             const badge = document.getElementById('role-badge');
@@ -453,21 +442,7 @@
                 ensureSocioStatusGuard(user);
             }
 
-            // Forzar scroll al inicio de forma más agresiva para navegadores móviles
-            const forceScrollTop = () => {
-                window.scrollTo(0, 0);
-                document.documentElement.scrollTop = 0;
-                document.body.scrollTop = 0;
-                const header = document.querySelector('header');
-                if (header) header.scrollIntoView({ behavior: 'instant', block: 'start' });
-            };
-
-            // Ejecutar inmediatamente y con varios retardos para asegurar que el DOM esté listo
-            forceScrollTop();
-            setTimeout(forceScrollTop, 50);
-            setTimeout(forceScrollTop, 150);
-            setTimeout(forceScrollTop, 300);
-
+            window.scrollTo(0, 0);
             cargarDatosPerfil();
             initData();
             ensureActivityListeners();
@@ -545,12 +520,8 @@
             if(id === 'caja') renderCaja();
             if(id === 'sistema') renderSistema();
 
-            // Resetear scroll al cambiar de sección (especialmente en móvil) con un pequeño retraso
-            setTimeout(() => {
-                window.scrollTo({ top: 0, behavior: 'instant' });
-                document.documentElement.scrollTop = 0;
-                document.body.scrollTop = 0;
-            }, 50);
+            // Resetear scroll al cambiar de sección (especialmente en móvil)
+            window.scrollTo(0, 0);
 
             // Cerrar el menú lateral automáticamente en móviles
             if (window.innerWidth < 768) {
