@@ -165,41 +165,85 @@
 
             // 1. Verificar si el UID corresponde al Admin Raíz
             if (uid === 'X4Mi3xnMqDYGUtPizGVdipl3Hog1') {
-                console.log("UID coincide con Admin Raíz. Obteniendo perfil de 'admins/root'.");
-                const rootSnap = await get(ref(db, 'admins/root'));
-                if (rootSnap.exists()) {
-                    const rootData = rootSnap.val() || {};
-                    return { ...rootData, id: 'root', uid, email, role: 'root', permisos: { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } };
+                console.log("UID coincide con Admin Raíz. Intentando obtener perfil de 'admins/root'...");
+                try {
+                    const rootSnap = await get(ref(db, 'admins/root'));
+                    if (rootSnap.exists()) {
+                        const rootData = rootSnap.val() || {};
+                        return { ...rootData, id: 'root', uid, email, role: 'root', permisos: { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } };
+                    }
+                } catch(e) {
+                    console.warn("Error al leer admins/root:", e);
+                    // Si falla la lectura, devolvemos un perfil básico de root para no bloquear el acceso
+                    return { id: 'root', uid, email, role: 'root', usuario: 'root', nombre: 'Admin Raíz', permisos: { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } };
                 }
             }
 
             // 2. Intentar buscar como Administrador normal por UID
-            console.log(`Buscando perfil para UID [${uid}] en admins/${uid}...`);
-            const adminSnap = await get(ref(db, `admins/${uid}`));
-            if (adminSnap.exists()) {
-                const a = adminSnap.val() || {};
-                const role = a.role || 'admin';
-                const permisos = a.permisos || {};
-                const profile = { ...a, id: uid, uid, email, role, permisos };
-                console.log(`Perfil de Administrador encontrado: ${(a.nombre || a.usuario || email)}`);
-                return profile;
+            try {
+                console.log(`Buscando perfil para UID [${uid}] en admins/${uid}...`);
+                const adminSnap = await get(ref(db, `admins/${uid}`));
+                if (adminSnap.exists()) {
+                    const a = adminSnap.val() || {};
+                    const role = a.role || 'admin';
+                    const permisos = a.permisos || {};
+                    const profile = { ...a, id: uid, uid, email, role, permisos };
+                    console.log(`Perfil de Administrador encontrado: ${(a.nombre || a.usuario || email)}`);
+                    return profile;
+                }
+            } catch(e) {
+                console.log("No se pudo leer admins/$uid, buscando en socios...");
             }
 
             // 3. Si no es admin, intentar buscar como Socio por UID
-            console.log(`Buscando perfil para UID [${uid}] en socios/${uid}...`);
-            const socioSnap = await get(ref(db, `socios/${uid}`));
-            if (socioSnap.exists()) {
-                const s = socioSnap.val() || {};
-                if (String(s.estado || '').toLowerCase() === 'inactivo') {
-                    throw new Error('ACCOUNT_INACTIVE');
+            try {
+                console.log(`Buscando perfil para UID [${uid}] en socios/${uid}...`);
+                const socioSnap = await get(ref(db, `socios/${uid}`));
+                if (socioSnap.exists()) {
+                    const s = socioSnap.val() || {};
+                    if (String(s.estado || '').toLowerCase() === 'inactivo') {
+                        throw new Error('ACCOUNT_INACTIVE');
+                    }
+                    const profile = { ...s, id: uid, uid, email, role: 'socio' };
+                    console.log(`Perfil de Socio encontrado: ${(s.nombres || s.usuario || email)}`);
+                    return profile;
                 }
-                const profile = { ...s, id: uid, uid, email, role: 'socio' };
-                console.log(`Perfil de Socio encontrado: ${(s.nombres || s.usuario || email)}`);
-                return profile;
+            } catch(e) {
+                if (e.message === 'ACCOUNT_INACTIVE') throw e;
+                console.log("No se pudo leer socios/$uid.");
             }
             
-            // 4. Si no se encontró perfil
-            console.log(`No se encontró ningún perfil en la base de datos para el UID [${uid}].`);
+            // 4. Si fallan las lecturas directas (debido a que los IDs en DB no son UIDs), intentamos búsqueda por escaneo (requiere permiso de lectura)
+            try {
+                console.log("Intentando búsqueda por escaneo de listas...");
+                const adminsSnap = await get(ref(db, 'admins'));
+                if (adminsSnap.exists()) {
+                    const admins = adminsSnap.val() || {};
+                    for (let id in admins) {
+                        if (admins[id] && admins[id].uid === uid) {
+                            const a = admins[id];
+                            return { ...a, id, uid, email, role: (id === 'root' ? 'root' : (a.role || 'admin')), permisos: a.permisos || {} };
+                        }
+                    }
+                }
+                
+                const sociosSnap = await get(ref(db, 'socios'));
+                if (sociosSnap.exists()) {
+                    const socios = sociosSnap.val() || {};
+                    for (let id in socios) {
+                        if (socios[id] && socios[id].uid === uid) {
+                            const s = socios[id];
+                            if (String(s.estado || '').toLowerCase() === 'inactivo') throw new Error('ACCOUNT_INACTIVE');
+                            return { ...s, id, uid, email, role: 'socio' };
+                        }
+                    }
+                }
+            } catch(e) {
+                if (e.message === 'ACCOUNT_INACTIVE') throw e;
+                console.error("Error en escaneo de listas:", e);
+            }
+
+            console.log(`No se pudo encontrar ningún perfil válido para el UID [${uid}].`);
             return null;
         }
 
@@ -218,28 +262,49 @@
             }
             const email = `${usuario}@urbgloria.com`;
             try {
+                console.log("Intentando autenticación con Firebase Auth...");
                 await signInWithEmailAndPassword(auth, email, pass);
-                try { await signInWithEmailAndPassword(authCaja, email, pass); } catch(_) {}
+                
+                // Login opcional en Caja (si falla no detiene el proceso)
+                try { 
+                    await signInWithEmailAndPassword(authCaja, email, pass); 
+                    console.log("Login en Auth Caja: OK");
+                } catch(errCaja) { 
+                    console.warn("Login en Auth Caja: FALLÓ (No crítico si es socio)"); 
+                }
+
                 const fbUser = auth.currentUser;
-                console.log("Login exitoso para:", usuario);
+                console.log("Autenticación Firebase: EXITOSA. Buscando perfil...");
+                
                 const perfil = await obtenerPerfil(fbUser);
                 if (perfil) {
                     loginSuccess(perfil);
                 } else {
                     const el = document.getElementById('login-error');
                     el.classList.remove('hidden');
-                    el.innerText = "Usuario autenticado pero sin perfil asignado. Contacte al soporte";
+                    el.innerText = "Usuario autenticado correctamente, pero no se encontró su perfil en la base de datos.";
                     await signOut(auth);
                     return;
                 }
             } catch (e) {
+                console.error("Error en handleLogin:", e);
                 const el = document.getElementById('login-error');
                 el.classList.remove('hidden');
+                
                 const inactive = e && ((e.message && e.message === 'ACCOUNT_INACTIVE') || (e.code && e.code === 'ACCOUNT_INACTIVE'));
                 const tooMany = e && e.code === 'auth/too-many-requests';
-                el.innerText = inactive
-                    ? 'Acceso denegado: Tu cuenta se encuentra inactiva. Por favor, comunícate con la administración de la Cooperativa.'
-                    : (tooMany ? 'Demasiados intentos de acceso. Espera unos minutos antes de volver a intentar.' : ((e && e.code) ? `Error de acceso: ${e.code}` : 'Credenciales inválidas o error de red'));
+                const authError = e && (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential');
+                
+                if (inactive) {
+                    el.innerText = 'Acceso denegado: Tu cuenta se encuentra inactiva. Por favor, comunícate con la administración.';
+                } else if (tooMany) {
+                    el.innerText = 'Demasiados intentos. Por favor, espera unos minutos.';
+                } else if (authError) {
+                    el.innerText = 'Usuario o contraseña incorrectos.';
+                } else {
+                    el.innerText = `Error al ingresar: ${e.code || 'Error de red o conexión'}. Verifique su conexión e intente nuevamente.`;
+                }
+                
                 try { await signOut(auth); } catch(_) {}
             }
         };
