@@ -2,6 +2,12 @@
         import { getDatabase, ref, set, push, onValue, update, remove, get, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
         import { getAuth, setPersistence, inMemoryPersistence, browserLocalPersistence, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider, updateEmail, deleteUser, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         
+        // Desactivar restauración de scroll del navegador inmediatamente
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, 0);
+
         // ========================================================
         // CREDENCIALES (Puestas aquí para compatibilidad con GitHub Pages)
         // ========================================================
@@ -419,15 +425,26 @@
         function loginSuccess(user) {
             try { console.clear(); } catch(_) {}
             
-            // Forzar scroll al inicio en móviles (especialmente Chrome)
-            try { 
-                if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-            } catch(_) {}
+            // Forzar scroll al inicio de forma inmediata y global
+            if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+            window.scrollTo(0, 0);
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
 
             currentUser = user;
             window.currentUser = user;
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-content').classList.remove('hidden');
+            
+            // Ocultar login y mostrar app
+            const loginScreen = document.getElementById('login-screen');
+            const appContent = document.getElementById('app-content');
+            
+            if (loginScreen) loginScreen.classList.add('hidden');
+            if (appContent) {
+                appContent.classList.remove('hidden');
+                // Forzar que el contenedor no tenga scroll heredado
+                appContent.scrollTop = 0;
+            }
+
             document.getElementById('user-display').innerText = user.nombre || `${user.nombres || ''} ${user.apellidos || ''}`;
             console.log("Login exitoso para:", user.usuario || user.email || '');
             
@@ -455,11 +472,13 @@
                 document.body.scrollTop = 0;
             };
 
+            // Ejecutar múltiples veces para asegurar que el renderizado de Chrome no lo ignore
             forceScrollTop();
-            setTimeout(forceScrollTop, 50);
-            setTimeout(forceScrollTop, 150);
+            setTimeout(forceScrollTop, 10);
+            setTimeout(forceScrollTop, 100);
             setTimeout(forceScrollTop, 300);
             setTimeout(forceScrollTop, 600);
+            setTimeout(forceScrollTop, 1000); // Un último intento para asegurar
 
             cargarDatosPerfil();
             initData();
