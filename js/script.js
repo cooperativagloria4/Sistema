@@ -418,6 +418,12 @@
 
         function loginSuccess(user) {
             try { console.clear(); } catch(_) {}
+            
+            // Forzar scroll al inicio en móviles (especialmente Chrome)
+            try { 
+                if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+            } catch(_) {}
+
             currentUser = user;
             window.currentUser = user;
             document.getElementById('login-screen').classList.add('hidden');
@@ -442,7 +448,23 @@
                 ensureSocioStatusGuard(user);
             }
 
-            window.scrollTo(0, 0);
+            // Función robusta para resetear el scroll
+            const forceScrollTop = () => {
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+                const main = document.querySelector('main');
+                if (main) main.scrollTop = 0;
+                const header = document.querySelector('header');
+                if (header) header.scrollIntoView({ behavior: 'instant', block: 'start' });
+            };
+
+            forceScrollTop();
+            setTimeout(forceScrollTop, 50);
+            setTimeout(forceScrollTop, 150);
+            setTimeout(forceScrollTop, 300);
+            setTimeout(forceScrollTop, 600); // Un intento extra para conexiones lentas
+
             cargarDatosPerfil();
             initData();
             ensureActivityListeners();
@@ -488,9 +510,37 @@
         };
         window.toggleSidebar = () => {
             const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
             if (!sidebar) return;
-            sidebar.classList.toggle('hidden');
+            
+            const isHidden = sidebar.classList.contains('-translate-x-full');
+            if (isHidden) {
+                // Abrir
+                sidebar.classList.remove('-translate-x-full');
+                if (backdrop) {
+                    backdrop.classList.remove('hidden');
+                    // Forzar reflow para la transición de opacidad
+                    backdrop.offsetHeight;
+                    backdrop.classList.remove('opacity-0');
+                    backdrop.classList.add('opacity-100');
+                }
+                document.body.style.overflow = 'hidden'; // Bloquear scroll al abrir menú
+            } else {
+                // Cerrar
+                sidebar.classList.add('-translate-x-full');
+                if (backdrop) {
+                    backdrop.classList.remove('opacity-100');
+                    backdrop.classList.add('opacity-0');
+                    setTimeout(() => {
+                        if (sidebar.classList.contains('-translate-x-full')) {
+                            backdrop.classList.add('hidden');
+                        }
+                    }, 300);
+                }
+                document.body.style.overflow = '';
+            }
         };
+
         window.showSection = (id) => {
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden-section'));
             const can = (perm) => currentUser && (currentUser.role === 'root' || (currentUser.role === 'admin' && currentUser.permisos && currentUser.permisos[perm]));
@@ -521,12 +571,16 @@
             if(id === 'sistema') renderSistema();
 
             // Resetear scroll al cambiar de sección (especialmente en móvil)
+            const main = document.querySelector('main');
+            if (main) main.scrollTop = 0;
             window.scrollTo(0, 0);
 
-            // Cerrar el menú lateral automáticamente en móviles
+            // Cerrar el menú lateral automáticamente en móviles si está abierto
             if (window.innerWidth < 768) {
                 const sidebar = document.getElementById('sidebar');
-                if (sidebar) sidebar.classList.add('hidden');
+                if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+                    toggleSidebar();
+                }
             }
         };
 
