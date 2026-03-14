@@ -162,67 +162,44 @@
             if (!fbUser) return null;
             const uid = fbUser.uid;
             const email = fbUser.email || '';
-            console.log(`Buscando UID [${uid}] en Admins...`);
-            // Intento directo por clave uid
-            const directAdmin = await get(ref(db, `admins/${uid}`));
-            if (directAdmin.exists()) {
-                const a = directAdmin.val() || {};
-                const role = a.role === 'root' ? 'root' : (a.role || 'admin');
-                const permisos = role === 'root' ? { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } : (a.permisos || {});
+
+            // 1. Verificar si el UID corresponde al Admin Raíz
+            if (uid === 'X4Mi3xnMqDYGUtPizGVdipl3Hog1') {
+                console.log("UID coincide con Admin Raíz. Obteniendo perfil de 'admins/root'.");
+                const rootSnap = await get(ref(db, 'admins/root'));
+                if (rootSnap.exists()) {
+                    const rootData = rootSnap.val() || {};
+                    return { ...rootData, id: 'root', uid, email, role: 'root', permisos: { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } };
+                }
+            }
+
+            // 2. Intentar buscar como Administrador normal por UID
+            console.log(`Buscando perfil para UID [${uid}] en admins/${uid}...`);
+            const adminSnap = await get(ref(db, `admins/${uid}`));
+            if (adminSnap.exists()) {
+                const a = adminSnap.val() || {};
+                const role = a.role || 'admin';
+                const permisos = a.permisos || {};
                 const profile = { ...a, id: uid, uid, email, role, permisos };
-                console.log(`Perfil encontrado: ${(a.nombre || a.nombres || a.usuario || email)} con Rol: ${role}`);
+                console.log(`Perfil de Administrador encontrado: ${(a.nombre || a.usuario || email)}`);
                 return profile;
             }
-            // Escaneo de admins/
-            let adminsAll = {};
-            try {
-                const adminsSnap = await get(ref(db, 'admins'));
-                adminsAll = adminsSnap.val() || {};
-            } catch (e) {
-                console.log("Acceso restringido a lista de admins (Rol probable: Socio)");
+
+            // 3. Si no es admin, intentar buscar como Socio por UID
+            console.log(`Buscando perfil para UID [${uid}] en socios/${uid}...`);
+            const socioSnap = await get(ref(db, `socios/${uid}`));
+            if (socioSnap.exists()) {
+                const s = socioSnap.val() || {};
+                if (String(s.estado || '').toLowerCase() === 'inactivo') {
+                    throw new Error('ACCOUNT_INACTIVE');
+                }
+                const profile = { ...s, id: uid, uid, email, role: 'socio' };
+                console.log(`Perfil de Socio encontrado: ${(s.nombres || s.usuario || email)}`);
+                return profile;
             }
             
-            if (adminsAll.root) {
-                const a = adminsAll.root;
-                if (a.uid && a.uid === uid) {
-                    const role = 'root';
-                    const profile = { ...a, id: 'root', uid, email, role, permisos: { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } };
-                    console.log(`Perfil encontrado: ${(a.nombre || a.nombres || a.usuario || email)} con Rol: ${role}`);
-                    return profile;
-                }
-            }
-            for (const [id, a] of Object.entries(adminsAll)) {
-                if (!a) continue;
-                if ((a.uid && a.uid === uid)) {
-                    const role = id === 'root' || a.role === 'root' ? 'root' : (a.role || 'admin');
-                    const permisos = role === 'root' ? { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } : (a.permisos || {});
-                    const profile = { ...a, id, uid, email, role, permisos };
-                    console.log(`Perfil encontrado: ${(a.nombre || a.nombres || a.usuario || email)} con Rol: ${role}`);
-                    return profile;
-                }
-            }
-            console.log(`Buscando UID [${uid}] en Socios...`);
-            // Intento directo por clave uid
-            const socioDirect = await get(ref(db, `socios/${uid}`));
-            if (socioDirect.exists()) {
-                const s = socioDirect.val() || {};
-                if (String(s.estado || '').toLowerCase() === 'inactivo') { throw new Error('ACCOUNT_INACTIVE'); }
-                const profile = { ...s, id: uid, uid, email, role: 'socio' };
-                console.log(`Perfil encontrado: ${(s.nombres || s.nombre || s.usuario || email)} con Rol: socio`);
-                return profile;
-            }
-            // Escaneo de socios/
-            const sociosSnap = await get(ref(db, 'socios'));
-            const sociosAll = sociosSnap.val() || {};
-            for (const [id, s] of Object.entries(sociosAll)) {
-                if (!s) continue;
-                if (s.uid && s.uid === uid) {
-                    if (String(s.estado || '').toLowerCase() === 'inactivo') { throw new Error('ACCOUNT_INACTIVE'); }
-                    const profile = { ...s, id, uid, email, role: 'socio' };
-                    console.log(`Perfil encontrado: ${(s.nombres || s.nombre || s.usuario || email)} con Rol: socio`);
-                    return profile;
-                }
-            }
+            // 4. Si no se encontró perfil
+            console.log(`No se encontró ningún perfil en la base de datos para el UID [${uid}].`);
             return null;
         }
 
