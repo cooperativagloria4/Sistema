@@ -439,7 +439,7 @@
             const badge = document.getElementById('role-badge');
             if (badge) {
                 badge.innerText = roleText;
-                badge.className = `${roleClass} px-2 py-0.5 rounded-full text-[8px] sm:text-xs font-bold uppercase whitespace-nowrap`;
+                badge.className = `${roleClass} px-2 py-0.5 rounded-lg sm:rounded-full text-[9px] sm:text-xs font-black uppercase whitespace-nowrap shadow-sm`;
             }
 
             limpiarInterfaz();
@@ -1945,10 +1945,9 @@
             }
 
             try {
-                // Usamos update para añadir el voto del socio sin borrar los demás
-                // El nodo 'votos' es un objeto { socioId: 'SI'/'NO' }
-                const votosRef = ref(db, `votaciones/${id}/votos`);
-                await update(votosRef, { [voterId]: opcion });
+                // Usamos set directamente en la ruta del socio para que las reglas de Firebase sean más fáciles de aplicar
+                const votoIndividualRef = ref(db, `votaciones/${id}/votos/${voterId}`);
+                await set(votoIndividualRef, opcion);
                 
                 showToast("¡Voto registrado con éxito!", "success");
                 console.log(`[Votación] Voto '${opcion}' registrado con éxito para el socio ${voterId}`);
