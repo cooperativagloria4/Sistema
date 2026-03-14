@@ -2420,13 +2420,37 @@
                 } catch(e) { return fechaStr; }
             };
 
-            // Regresando a tamaño Carta/A4 estándar completo
+            // Hash de Validación Único (Simulado basado en datos del recibo)
+            const generarHash = (d) => {
+                const str = `${d.numeroRecibo}${d.monto}${d.fechaPago}${d.nombreSocio}`;
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
+            };
+            const validHash = generarHash(data);
+
             const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
             const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
             const margin = 40;
-            let y = 30; // Reducido el margen superior de 50 a 30
+            let y = 30;
+
+            // --- MARCA DE AGUA (Sello de Seguridad) ---
+            doc.setTextColor(240, 240, 240);
+            doc.setFontSize(40);
+            doc.setFont('helvetica', 'bold');
+            doc.saveGraphicsState();
+            doc.setGState(new doc.GState({ opacity: 0.1 }));
+            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 180, { align: 'center', angle: 45 });
+            doc.text('URB. GLORIA N° 4', pageWidth / 2, 280, { align: 'center', angle: 45 });
+            doc.restoreGraphicsState();
 
             // --- CABECERA CENTRADA ---
+            doc.setTextColor(0, 0, 0);
             doc.setFontSize(13);
             doc.setFont('helvetica', 'bold');
             doc.text('COOPERATIVA DE VIVIENDA GLORIA Nº 4', pageWidth / 2, y, { align: 'center' });
@@ -2439,14 +2463,15 @@
             const boxWidth = 100;
             const boxHeight = 25;
             const boxX = pageWidth - margin - boxWidth;
-            const boxY = 18; // Ajustado de 38 a 18 para mantener alineación con el nuevo margen superior (y=30)
+            const boxY = 18;
 
-            doc.setFillColor(191, 219, 254);
-            doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 8, 8, 'F');
+            doc.setFillColor(240, 253, 244); // Verde suave
+            doc.setDrawColor(16, 185, 129); // Borde esmeralda
+            doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 8, 8, 'FD');
             
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(30, 58, 138);
+            doc.setTextColor(5, 150, 105);
             doc.text(`S/ ${data.monto}`, boxX + boxWidth / 2, boxY + 17, { align: 'center' });
 
             doc.setTextColor(0, 0, 0);
@@ -2455,7 +2480,7 @@
             doc.text(`Nº: ${data.numeroRecibo}`, boxX + boxWidth / 2, boxY + boxHeight + 12, { align: 'center' });
 
             // --- CUERPO DEL RECIBO (LEFT) ---
-            y = 80; // Ajustado de 100 a 80 siguiendo el nuevo margen superior
+            y = 85;
             const labelX = margin;
             const valueX = margin + 100;
             const lineHeight = 18;
@@ -2477,32 +2502,37 @@
                 y += lineHeight;
             });
 
+            // --- CÓDIGO DE VALIDACIÓN (HASH) ---
+            y += 10;
+            doc.setFontSize(8);
+            doc.setFont('courier', 'bold');
+            doc.setTextColor(100, 100, 100);
+            doc.text(`HASH DE VALIDACIÓN: ${validHash}`, margin, y);
+
             // --- LÍNEA DE FIRMA (CENTRO INFERIOR) ---
-            y += 10; // Reducido 2 líneas más (de 20 a 10)
+            y += 20;
             doc.setDrawColor(0, 0, 0);
             doc.line(pageWidth / 2 - 100, y, pageWidth / 2 + 100, y);
-            // Se eliminó el texto "FIRMA" debajo de la línea
             
-            // Pie de página (más cerca del final del contenido)
-            y += 66; // Aumentado de 30 a 66 para bajar el texto 2 líneas aprox
+            // Pie de página
+            y += 50;
             const now = new Date();
             const pad = n => String(n).padStart(2,'0');
-            const fechaGen = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} a las ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            const fechaGen = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} a las ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
             doc.setFontSize(7);
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(150, 150, 150);
-            doc.text(`Documento generado el ${fechaGen}`, pageWidth / 2, y, { align: 'center' });
+            doc.text(`Este documento es una constancia digital válida de pago.`, pageWidth / 2, y, { align: 'center' });
+            y += 10;
+            doc.text(`Generado el ${fechaGen} | ID Transacción: ${data.id || 'N/A'}`, pageWidth / 2, y, { align: 'center' });
 
             // --- LÍNEA DE CORTE ---
             y += 15;
             doc.setDrawColor(180, 180, 180);
-            doc.setLineDash([3, 3], 0); // Línea punteada
+            doc.setLineDash([3, 3], 0);
             doc.line(0, y, pageWidth, y);
-            
-            // Icono de tijeras (representado con caracteres si no hay imagen, o una etiqueta)
-            doc.setFontSize(10);
             doc.text('✂---------------------------------------------------------------------------------------------------------------------------------', pageWidth / 2, y + 3, { align: 'center' });
-            doc.setLineDash([], 0); // Resetear a línea sólida para futuros usos
+            doc.setLineDash([], 0);
 
             doc.save(`Recibo_${data.numeroRecibo}.pdf`);
         };
