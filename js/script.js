@@ -667,7 +667,7 @@
                 if (snap.exists()) {
                     const data = snap.val() || {};
                     const all = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-                    socioCajaMovs = all.filter(m => m && m.esCuota && m.cuotaOriginal && m.cuotaOriginal.socioId === (currentUser && currentUser.id));
+                    socioCajaMovs = all.filter(m => m && m.esCuota && m.estado !== 'revertido' && m.cuotaOriginal && m.cuotaOriginal.socioId === (currentUser && currentUser.id));
                     renderSocioDashboard();
                 } else {
                     socioCajaMovs = [];
@@ -676,7 +676,7 @@
             cajaSocioUnsub = onValue(qRef, (snap) => {
                 const data = snap.val() || {};
                 const all = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-                socioCajaMovs = all.filter(m => m && m.esCuota && (
+                socioCajaMovs = all.filter(m => m && m.esCuota && m.estado !== 'revertido' && (
                     (m.cuotaOriginal && m.cuotaOriginal.socioId === (currentUser && currentUser.id)) ||
                     (m.socioId && m.socioId === (currentUser && currentUser.id))
                 ));
@@ -880,6 +880,7 @@
             const ingresosOtros = [];
             const egresosDetalle = [];
             filtrados.forEach(m => {
+                if (m.estado === 'revertido') return; // EXCLUIR REVERTIDOS
                 const monto = Number(m.monto) || 0;
                 const tipo = String(m.tipo || '').toLowerCase();
                 if (tipo === 'ingreso') {
@@ -1066,8 +1067,8 @@
             
             document.getElementById('socio-deuda').innerText = `S/ ${deuda.toFixed(2)}`;
             const pagos = (socioCajaMovs && socioCajaMovs.length > 0)
-                ? socioCajaMovs
-                : allCajaMovs.filter(m => m.esCuota && (
+                ? socioCajaMovs.filter(m => m.estado !== 'revertido')
+                : allCajaMovs.filter(m => m.esCuota && m.estado !== 'revertido' && (
                     (m.cuotaOriginal && m.cuotaOriginal.socioId === currentUser.id) ||
                     (m.socioId && m.socioId === currentUser.id)
                 ));
@@ -1644,7 +1645,14 @@
             document.getElementById('caja-total-in').innerText = "S/ " + totalIn.toFixed(2);
             document.getElementById('caja-total-out').innerText = "S/ " + totalOut.toFixed(2);
             document.getElementById('caja-balance-ui').innerText = "S/ " + balance.toFixed(2);
-            if(document.getElementById('dash-caja')) document.getElementById('dash-caja').innerText = "S/ " + balance.toFixed(2);
+            
+            // BALANCE GENERAL (Todos los tiempos, excluyendo revertidos)
+            const allValidMovs = allCajaMovs.filter(m => m.estado !== 'revertido');
+            const genIn = allValidMovs.filter(m => m.tipo === 'ingreso').reduce((acc, m) => acc + parseFloat(m.monto || 0), 0);
+            const genOut = allValidMovs.filter(m => m.tipo === 'egreso').reduce((acc, m) => acc + parseFloat(m.monto || 0), 0);
+            const genBalance = genIn - genOut;
+
+            if(document.getElementById('dash-caja')) document.getElementById('dash-caja').innerText = "S/ " + genBalance.toFixed(2);
         };
         window.revertirACuota = async (movId) => {
             if(!confirm("¿Desea revertir este pago? El registro se eliminará de Caja y volverá a Control de Cuotas como pendiente.")) return;
@@ -2911,7 +2919,8 @@
                 const monthStr = d.toISOString().substring(0, 7); // YYYY-MM
                 labels.push(d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }));
                 
-                const movsMes = allCajaMovs.filter(m => m.fecha && m.fecha.startsWith(monthStr));
+                // Excluir revertidos de las estadísticas del gráfico
+                const movsMes = allCajaMovs.filter(m => m.fecha && m.fecha.startsWith(monthStr) && m.estado !== 'revertido');
                 const totalIn = movsMes.filter(m => m.tipo === 'ingreso').reduce((acc, m) => acc + parseFloat(m.monto || 0), 0);
                 const totalOut = movsMes.filter(m => m.tipo === 'egreso').reduce((acc, m) => acc + parseFloat(m.monto || 0), 0);
                 
@@ -3140,7 +3149,29 @@
                 }
             } catch (e) {
                 console.error("Error al validar QR:", e);
-                showToast("Error de conexión al servidor de validación", "error");
+                const isPermissionError = e.message.includes('permission_denied') || e.code === 'PERMISSION_DENIED';
+                if (isPermissionError) {
+                    showToast("Error de permisos: La base de datos no permite validación pública.", "error");
+                    const body = `
+                        <div class="text-center py-6 space-y-4">
+                            <i class="fas fa-lock text-red-500 text-5xl mb-4"></i>
+                            <h3 class="text-lg font-bold text-gray-800">Error de Permisos</h3>
+                            <p class="text-sm text-gray-600 px-4">
+                                Para que la validación pública funcione, debes actualizar las Reglas de Seguridad en tu consola de Firebase (Base de Datos de Caja).
+                            </p>
+                            <div class="bg-gray-100 p-3 rounded text-left text-[10px] font-mono overflow-x-auto">
+                                "movimientos": {<br>
+                                &nbsp;&nbsp;"$movId": {<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;".read": "true"<br>
+                                &nbsp;&nbsp;}<br>
+                                }
+                            </div>
+                        </div>
+                    `;
+                    openModal("Configuración Requerida", body);
+                } else {
+                    showToast("Error de conexión al servidor de validación", "error");
+                }
             }
         };
 
