@@ -1405,20 +1405,39 @@
             let pendientes = cuotasData;
             if(filterMonth) pendientes = pendientes.filter(c => c.fecha && c.fecha.startsWith(filterMonth));
             let pagadas = allCajaMovs.filter(m => m.esCuota && m.estado !== 'revertido');
-            if(filterMonth) pagadas = pagadas.filter(m => m.fecha && m.fecha.startsWith(filterMonth));
+            
+            // Si hay un mes seleccionado, filtramos por la fecha de la cuota original, no por la fecha de pago
+            if(filterMonth) {
+                pagadas = pagadas.filter(m => m.cuotaOriginal && m.cuotaOriginal.fechaEmision && m.cuotaOriginal.fechaEmision.startsWith(filterMonth));
+            }
+
+            // Mapeamos pendientes y pagadas
+            const pendientesMap = pendientes.map(c => ({ ...c, estado: 'pendiente' }));
+            const pagadasMap = pagadas.map(m => ({
+                id: m.id,
+                socioId: m.cuotaOriginal.socioId,
+                concepto: m.cuotaOriginal.concepto,
+                monto: m.monto,
+                fecha: m.cuotaOriginal.fechaEmision,
+                estado: 'pagado',
+                fechaPago: m.fecha,
+                numeroRecibo: m.numeroRecibo || '-'
+            }));
+
+            // Filtro para evitar duplicados: Si una cuota está como pendiente, no la mostramos como pagada 
+            // (Esto resuelve problemas de sincronización o errores de reversión previa)
+            const pagadasSinDuplicados = pagadasMap.filter(p => {
+                const existeEnPendientes = pendientesMap.some(pen => 
+                    pen.socioId === p.socioId && 
+                    pen.concepto === p.concepto && 
+                    pen.fecha === p.fecha
+                );
+                return !existeEnPendientes;
+            });
 
             const combinadas = [
-                ...pendientes.map(c => ({ ...c, estado: 'pendiente' })),
-                ...pagadas.map(m => ({
-                    id: m.id,
-                    socioId: m.cuotaOriginal.socioId,
-                    concepto: m.cuotaOriginal.concepto,
-                    monto: m.monto,
-                    fecha: m.cuotaOriginal.fechaEmision,
-                    estado: 'pagado',
-                    fechaPago: m.fecha,
-                    numeroRecibo: m.numeroRecibo || '-'
-                }))
+                ...pendientesMap,
+                ...pagadasSinDuplicados
             ].sort((a,b) => (a.fecha || '').localeCompare(b.fecha || ''));
 
             combinadas.forEach(c => {
