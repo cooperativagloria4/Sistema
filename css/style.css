@@ -1,9 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
-body { font-family: 'Inter', sans-serif; background: var(--bg-soft) !important; }
-.login-modern { font-family: 'Poppins', sans-serif; }
-
 :root { 
     --brand-emerald: #10B981; 
     --brand-forest: #14532d; 
@@ -11,14 +8,37 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-soft) !important; 
     --bg-soft: #f8f9fa; 
 }
 
+.login-modern { font-family: 'Poppins', sans-serif; }
+
+html, body { 
+    height: 100%; 
+    margin: 0; 
+    padding: 0; 
+    overflow: hidden; /* Evita el scroll doble en móviles */
+    overscroll-behavior: none; /* Evita el "pull-to-refresh" que rompe la app */
+}
+
+body { 
+    font-family: 'Inter', sans-serif; 
+    background: var(--bg-soft) !important; 
+    display: flex;
+    flex-direction: column;
+}
+
 #app-content { 
     background: linear-gradient(180deg, rgba(248,249,250,1) 0%, rgba(246,248,249,1) 100%); 
     font-family: 'Poppins', sans-serif; 
-    overflow: hidden; /* Prevent body scroll if app-content is full screen */
+    height: 100%; /* Ocupa el 100% del body que es 100% de la pantalla */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 main {
-    -webkit-overflow-scrolling: touch; /* Smooth scroll for iOS */
+    flex: 1;
+    overflow-y: auto !important; /* Asegura que el scroll principal funcione */
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+    overscroll-behavior-y: contain; /* Evita que el scroll se propague al body */
 }
 
 header { 
