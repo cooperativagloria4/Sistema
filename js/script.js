@@ -442,7 +442,13 @@
                 ensureSocioStatusGuard(user);
             }
 
+            // Forzar scroll al inicio del documento y del contenedor de la app
             window.scrollTo(0, 0);
+            const mainContent = document.querySelector('main');
+            if (mainContent) mainContent.scrollTop = 0;
+            const appContent = document.getElementById('app-content');
+            if (appContent) appContent.scrollTop = 0;
+
             cargarDatosPerfil();
             initData();
             ensureActivityListeners();
