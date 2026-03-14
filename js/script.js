@@ -2325,11 +2325,11 @@
                 } catch(e) { return fechaStr; }
             };
 
-            // Tamaño: Ancho A4 estándar (595 pt) pero Corto verticalmente (300 pt)
-            const doc = new jsPDF({ unit: 'pt', format: [595, 300], orientation: 'portrait' });
+            // Regresando a tamaño Carta/A4 estándar completo
+            const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
             const pageWidth = doc.internal.pageSize.getWidth();
             const margin = 40;
-            let y = 40;
+            let y = 50;
 
             // --- CABECERA CENTRADA ---
             doc.setFontSize(13);
