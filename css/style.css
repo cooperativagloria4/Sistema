@@ -63,13 +63,6 @@ section h1 {
     box-shadow: 0 16px 32px -24px rgba(2,6,23,0.35), 0 8px 16px -12px rgba(2,6,23,0.2) !important; 
 }
 
-@media (max-width: 640px) {
-    .bg-white.rounded-xl, .bg-white.rounded-lg, .rounded-xl.shadow, .rounded-lg.shadow, .shadow-sm.border, .shadow-sm { 
-        border-radius: 12px !important; 
-        box-shadow: 0 8px 16px -12px rgba(2,6,23,0.2) !important;
-    }
-}
-
 .glass-card { 
     background: rgba(255,255,255,0.7); 
     backdrop-filter: blur(10px); 
@@ -194,40 +187,6 @@ input:focus, select:focus, textarea:focus {
 
 @media print { 
     .no-print { display: none !important; } 
-}
-
-/* Responsive Mobile Optimizations */
-@media (max-width: 767px) {
-    section h1 { font-size: 1.1rem; }
-    .grid { gap: 1rem !important; }
-    .p-6 { padding: 1rem !important; }
-    .p-8 { padding: 1.25rem !important; }
-    
-    /* Ajustes para modales en móvil */
-    #modal > div {
-        width: 95% !important;
-        margin: auto;
-        border-radius: 15px;
-    }
-    
-    #modal-body {
-        padding: 1.25rem !important;
-    }
-
-    /* Tablas responsivas */
-    .overflow-x-auto {
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    table thead th, table tbody td {
-        padding: 0.75rem 0.5rem !important;
-        font-size: 0.75rem !important;
-    }
-
-    /* Dashboard Socio Cards */
-    .widget-asamblea, .widget-votacion, .widget-informe {
-        padding: 1rem !important;
-    }
 }
 
 /* Estilos vistosos para el dashboard de socios */
