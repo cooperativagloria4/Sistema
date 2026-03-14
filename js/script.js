@@ -1379,12 +1379,14 @@
             console.log(`[Caja] Registrando movimiento de cuota con UID ${adminUid}`);
             let sugerido = '';
             try {
-                const confSnap = await get(ref(dbCaja, 'config/correlativos/recibosNext'));
-                let confVal = 0;
-                if (confSnap.exists()) {
-                    const v = Number(confSnap.val());
-                    if (isFinite(v) && v > 0) confVal = v;
-                }
+                // Obtener TODA la configuración de correlativos de Caja para asegurar frescura
+                const configSnap = await get(ref(dbCaja, 'config/correlativos'));
+                const cfg = configSnap.exists() ? configSnap.val() : {};
+                
+                const confVal = Number(cfg.recibosNext) || 0;
+                const prefix = cfg.prefix || '';
+                const padLength = parseInt(cfg.padding || '0', 10);
+
                 let maxMovRemote = 0;
                 try {
                     const movSnap = await get(ref(dbCaja, 'movimientos'));
@@ -1408,16 +1410,24 @@
                         return (isFinite(n) && n > acc) ? n : acc;
                     }, 0);
                 const storedNext = parseInt(String(localStorage.getItem('cajaReciboNext') || '0'), 10);
-                const candidateBase = Math.max(confVal, maxMovRemote, maxMovLocal, isFinite(storedNext) && storedNext > 0 ? storedNext : 0);
-                const candidate = (candidateBase > 0) ? (candidateBase + 1) : 1;
+                
+                let candidate = 1;
+                if (confVal > 0) {
+                    // Si hay una configuración manual, usamos ESE número directamente (sin +1)
+                    candidate = confVal;
+                } else {
+                    // Si no hay configuración manual, buscamos el máximo existente y sumamos +1
+                    const maxExistente = Math.max(maxMovRemote, maxMovLocal, isFinite(storedNext) ? storedNext : 0);
+                    candidate = (maxExistente > 0) ? (maxExistente + 1) : 1;
+                }
                 
                 // Aplicar Prefijo y Padding (ceros a la izquierda)
-                const prefix = (configData.correlativos && configData.correlativos.prefix) || '';
-                const padLength = parseInt((configData.correlativos && configData.correlativos.padding) || '0', 10);
                 const numStr = String(candidate).padStart(padLength, '0');
-                
                 sugerido = prefix ? `${prefix}-${numStr}` : numStr;
-            } catch(_) { sugerido = '1'; }
+            } catch(e) { 
+                console.error("Error calculando sugerido:", e);
+                sugerido = '1'; 
+            }
             const body = `<div class="space-y-3">
                 <div><label class="block text-xs font-bold uppercase mb-1">Número de Recibo Físico</label><input id="recibo-num" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-emerald-500" value="${sugerido}" placeholder="Ingrese el número de recibo"></div>
                 <div><label class="block text-xs font-bold uppercase mb-1">Fecha de pago</label><input id="recibo-fecha" type="date" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-emerald-500" value="${new Date().toISOString().split('T')[0]}"></div>
@@ -1931,16 +1941,45 @@
             } catch(_) {}
         }
         window.guardarConfigRecibos = async () => {
-            const prefix = document.getElementById('cfg-recibo-prefix').value.trim();
-            const next = parseInt(document.getElementById('cfg-recibo-next').value, 10);
-            const padding = document.getElementById('cfg-recibo-padding').value;
+            const btn = event?.target || document.querySelector('button[onclick="guardarConfigRecibos()"]');
+            const originalText = btn ? btn.innerText : '';
+            
+            const prefixEl = document.getElementById('cfg-recibo-prefix');
+            const nextEl = document.getElementById('cfg-recibo-next');
+            const paddingEl = document.getElementById('cfg-recibo-padding');
+
+            if (!prefixEl || !nextEl || !paddingEl) {
+                console.error("No se encontraron los elementos de configuración de recibos");
+                return;
+            }
+
+            const prefix = prefixEl.value.trim();
+            const next = parseInt(nextEl.value, 10);
+            const padding = paddingEl.value;
+
             if (isNaN(next)) return showToast("El próximo número debe ser válido", "warning");
+            
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = "Actualizando...";
+            }
+
             try {
-                // Guardar en la DB de Caja para consistencia con los movimientos
-                await update(ref(dbCaja, 'config/correlativos'), { prefix, recibosNext: next, padding });
+                console.log("[Sistema] Actualizando correlativos en Caja...", { prefix, next, padding });
+                await update(ref(dbCaja, 'config/correlativos'), { 
+                    prefix: prefix, 
+                    recibosNext: next, 
+                    padding: padding 
+                });
                 showToast("Correlativo actualizado correctamente", "success");
             } catch(e) {
-                showToast("Error al actualizar configuración", "error");
+                console.error("Error al actualizar correlativos:", e);
+                showToast("Error de permisos o conexión al actualizar", "error");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                }
             }
         };
         window.toggleRestriccionVoto = async (checked) => { await update(ref(db, 'config/votaciones'), { restringirMorosos: checked }); };
