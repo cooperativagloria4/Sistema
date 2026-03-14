@@ -150,6 +150,12 @@
                 <button id="nav-votaciones" onclick="showSection('votaciones')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3 hidden admin-nav">
                     <i class="fas fa-vote-yea"></i> Votaciones
                 </button>
+                <button id="nav-visitas" onclick="showSection('visitas')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3">
+                    <i class="fas fa-id-badge"></i> Mis Visitas
+                </button>
+                <button id="nav-control" onclick="showSection('control')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3 hidden vigilante-nav">
+                    <i class="fas fa-shield-alt"></i> Control de Ingreso
+                </button>
                 <!-- Solo Root -->
                 <button id="nav-sistema" onclick="showSection('sistema')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition flex items-center gap-3 hidden">
                     <i class="fas fa-cogs"></i> Sistema
@@ -334,9 +340,6 @@
                             <button onclick="printAislado('table-padron', 'PADRÓN DE SOCIOS')" class="flex-1 sm:flex-none bg-slate-50 text-slate-700 border border-slate-200 px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 hover:text-white transition flex items-center justify-center gap-2">
                                 <i class="fas fa-print"></i> Imprimir
                             </button>
-                            <button onclick="generarTodosLosCarnets()" class="flex-1 sm:flex-none bg-indigo-50 text-indigo-700 border border-indigo-100 px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-indigo-600 hover:text-white transition flex items-center justify-center gap-2">
-                                <i class="fas fa-id-card"></i> Carnets
-                            </button>
                         </div>
                     </div>
 
@@ -502,6 +505,35 @@
                         </button>
                     </div>
                     <div id="votaciones-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </section>
+
+                <!-- Visitas (Socios) -->
+                <section id="sec-visitas" class="hidden-section space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <h1 class="text-2xl font-bold text-slate-800">Mis Visitas</h1>
+                        <button onclick="modalNuevaVisita()" class="w-full sm:w-auto bg-indigo-600 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fas fa-user-plus"></i> Generar Invitación
+                        </button>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
+                        <i class="fas fa-info-circle text-blue-500 mt-1"></i>
+                        <p class="text-xs text-blue-800 leading-relaxed">Genera códigos QR temporales para tus visitas. Estos códigos aparecerán automáticamente en la garita de control de los vigilantes para permitir su ingreso.</p>
+                    </div>
+                    <div id="visitas-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </section>
+
+                <!-- Control de Ingreso (Vigilantes) -->
+                <section id="sec-control" class="hidden-section space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <h1 class="text-2xl font-bold text-slate-800">Control de Ingreso</h1>
+                        <div class="relative w-full sm:w-64">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <i class="fas fa-search text-xs"></i>
+                            </span>
+                            <input type="text" id="control-search" placeholder="Buscar visita o socio..." oninput="renderControlIngreso()" class="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none transition" />
+                        </div>
+                    </div>
+                    <div id="control-visitas-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </section>
 
                 <!-- Sistema (Solo Root) -->
