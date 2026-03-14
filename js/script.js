@@ -448,22 +448,18 @@
                 ensureSocioStatusGuard(user);
             }
 
-            // Función robusta para resetear el scroll
+            // Función robusta para resetear el scroll al inicio (Ventana)
             const forceScrollTop = () => {
                 window.scrollTo({top: 0, left: 0, behavior: 'instant'});
                 document.documentElement.scrollTop = 0;
                 document.body.scrollTop = 0;
-                const main = document.querySelector('main');
-                if (main) main.scrollTop = 0;
-                const header = document.querySelector('header');
-                if (header) header.scrollIntoView({ behavior: 'instant', block: 'start' });
             };
 
             forceScrollTop();
             setTimeout(forceScrollTop, 50);
             setTimeout(forceScrollTop, 150);
             setTimeout(forceScrollTop, 300);
-            setTimeout(forceScrollTop, 600); // Un intento extra para conexiones lentas
+            setTimeout(forceScrollTop, 600);
 
             cargarDatosPerfil();
             initData();
@@ -575,10 +571,6 @@
                 window.scrollTo({top: 0, left: 0, behavior: 'instant'});
                 document.documentElement.scrollTop = 0;
                 document.body.scrollTop = 0;
-                const main = document.querySelector('main');
-                if (main) main.scrollTop = 0;
-                const header = document.querySelector('header');
-                if (header) header.scrollIntoView({ behavior: 'instant', block: 'start' });
             };
 
             forceScrollTop();
