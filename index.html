@@ -14,7 +14,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=2.3">
+    <link rel="stylesheet" href="css/style.css?v=1.0">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body class="bg-gray-100 h-full">
@@ -54,60 +54,62 @@
         </div>
         <!-- Versión del Sistema en Login (Fuera del recuadro) -->
         <div class="mt-4 text-center">
-            <p class="text-[9px] sm:text-[10px] text-slate-500 uppercase font-bold tracking-widest opacity-60">Sistema Cooperativa Gloria N°4 v.2</p>
-            <p class="text-[8px] sm:text-[9px] text-slate-500 mt-0.5 opacity-60">Versión 2.3</p>
+            <p class="text-[9px] sm:text-[10px] text-slate-500 uppercase font-bold tracking-widest opacity-60">Sistema Cooperativa Gloria N°4 v.1</p>
+            <p class="text-[8px] sm:text-[9px] text-slate-500 mt-0.5 opacity-60">Versión 1.0</p>
         </div>
     </div>
 
     <!-- Main App -->
     <div id="app-content" class="hidden flex flex-col h-full overflow-hidden">
         <!-- Header -->
-        <header class="bg-white border-b px-2 py-2 sm:px-4 sm:py-3 flex justify-between items-center no-print z-20 shadow-sm sticky top-0 h-[65px] sm:h-auto">
-            <!-- Izquierda: Hamburguesa + Logo (Móvil) / Nombre Coopera (Desktop) -->
-            <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                <button
-                    type="button"
-                    onclick="toggleSidebar()"
-                    class="md:hidden flex-shrink-0 p-2 rounded-xl hover:bg-emerald-50 transition-colors"
-                    aria-label="Abrir menú de navegación"
-                >
-                    <i class="fas fa-bars text-[#0f3f22] text-xl"></i>
-                </button>
-                
-                <!-- Logo solo en móvil -->
-                <div class="md:hidden flex-shrink-0">
-                    <svg width="32" height="32" viewBox="0 0 64 64" fill="none">
-                        <path d="M8 36L24 22L40 36V56H8V36Z" fill="#10B981"/>
-                        <path d="M28 28L40 18L56 30V56H40V36L28 28Z" fill="#0ea5e9" opacity="0.85"/>
-                        <circle cx="50" cy="14" r="6" fill="#10B981" opacity="0.9"/>
-                    </svg>
+        <header class="bg-white border-b px-3 py-2 sm:px-4 sm:py-3 flex flex-col sm:flex-row sm:justify-between sm:items-center no-print z-20 shadow-sm sticky top-0 h-auto">
+            <!-- Fila 1 (Móvil) / Lado Izquierdo (Desktop) -->
+            <div class="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onclick="toggleSidebar()"
+                        class="md:hidden p-2 rounded-xl hover:bg-emerald-50 transition-colors"
+                        aria-label="Abrir menú de navegación"
+                    >
+                        <i class="fas fa-bars text-[#0f3f22] text-xl"></i>
+                    </button>
+                    <!-- Logo + Nombre (Móvil: Nombre comprimido / Desktop: Nombre completo) -->
+                    <div class="flex items-center gap-2">
+                        <svg width="24" height="24" viewBox="0 0 64 64" fill="none" class="sm:w-8 sm:h-8">
+                            <path d="M8 36L24 22L40 36V56H8V36Z" fill="#10B981"/>
+                            <path d="M28 28L40 18L56 30V56H40V36L28 28Z" fill="#0ea5e9" opacity="0.85"/>
+                            <circle cx="50" cy="14" r="6" fill="#10B981" opacity="0.9"/>
+                        </svg>
+                        <h2 class="text-xs sm:text-lg md:text-xl font-bold text-[#0f3f22] uppercase sm:normal-case tracking-tight sm:tracking-normal">Cooperativa Gloria N°4</h2>
+                    </div>
                 </div>
 
-                <!-- Nombre Cooperativa solo en Desktop -->
-                <div class="hidden md:flex items-center gap-3">
-                    <h2 class="text-xl font-bold text-[#0f3f22]">Cooperativa Gloria N°4</h2>
-                    <span id="role-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase whitespace-nowrap"></span>
-                </div>
-
-                <!-- Info Usuario en el centro (Móvil) -->
-                <div class="md:hidden flex flex-col items-center flex-1 min-w-0 px-1">
-                    <span id="user-display-mobile" class="font-bold text-[#0f3f22] text-[9px] xs:text-[10px] leading-tight text-center break-words line-clamp-2"></span>
-                    <span id="role-badge-mobile" class="mt-0.5 px-2 py-0.5 rounded-full text-[7px] font-bold uppercase whitespace-nowrap"></span>
-                </div>
-            </div>
-
-            <!-- Derecha: Usuario (Desktop) / Botón Salir (Móvil/Desktop) -->
-            <div class="flex items-center gap-2">
-                <div class="hidden md:flex items-center gap-3 bg-[#f1f3f5] px-3 py-1.5 rounded-full border border-gray-200">
-                    <span id="user-display" class="font-medium text-[#0f3f22] text-sm leading-tight"></span>
-                </div>
+                <!-- Botón Salir solo icono en Móvil (Fila 1 derecha) -->
                 <button
                     onclick="logout()"
-                    class="p-2 sm:px-4 sm:py-2 rounded-xl text-red-600 hover:bg-red-50 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2"
+                    class="md:hidden p-2 rounded-xl text-red-600 hover:bg-red-50 active:scale-95 transition-all"
                     title="Cerrar Sesión"
                 >
-                    <i class="fas fa-sign-out-alt text-xl sm:text-base"></i>
-                    <span class="hidden sm:inline font-bold text-sm uppercase">Salir</span>
+                    <i class="fas fa-sign-out-alt text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Fila 2 (Móvil) / Lado Derecho (Desktop) -->
+            <div class="flex items-center justify-center sm:justify-end gap-2 mt-2 sm:mt-0 pt-2 sm:pt-0 border-t border-gray-50 sm:border-0 w-full sm:w-auto">
+                <div class="flex items-center gap-2 bg-[#f8fafc] sm:bg-[#f1f3f5] px-3 py-1.5 rounded-full border border-gray-100 sm:border-gray-200 shadow-sm sm:shadow-none">
+                    <i class="fas fa-user-circle text-emerald-600 text-xs sm:hidden"></i>
+                    <span id="user-display" class="font-bold sm:font-medium text-[#0f3f22] text-[10px] sm:text-sm leading-tight truncate max-w-[150px] sm:max-w-none"></span>
+                    <span id="role-badge" class="px-2 py-0.5 rounded-full text-[8px] sm:text-xs font-bold uppercase whitespace-nowrap"></span>
+                </div>
+                
+                <!-- Botón Salir completo en Desktop -->
+                <button
+                    onclick="logout()"
+                    class="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-red-600 bg-white border border-red-200 hover:bg-red-50 active:scale-95 transition-all font-bold text-sm uppercase shadow-sm"
+                >
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Salir</span>
                 </button>
             </div>
         </header>
@@ -154,8 +156,8 @@
 
                 <!-- Versión del Sistema -->
                 <div class="pt-6 mt-6 border-t border-white/10 text-center">
-                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Sistema Cooperativa Gloria N°4 v.2</p>
-                    <p class="text-[9px] text-slate-600 mt-1">Versión 2.3</p>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Sistema Cooperativa Gloria N°4 v.1</p>
+                    <p class="text-[9px] text-slate-600 mt-1">Versión 1.0</p>
                 </div>
             </nav>
 
@@ -565,6 +567,6 @@
     <!-- Table oculta para exportar votaciones a excel -->
     <table id="temp-votaciones-excel" style="display:none;"></table>
 
-    <script type="module" src="js/script.js?v=2.3"></script>
+    <script type="module" src="js/script.js?v=1.0"></script>
 </body>
 </html>
