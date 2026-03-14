@@ -1902,7 +1902,10 @@
                     <div class="flex flex-wrap gap-2 border-t pt-3">
                         <button onclick="exportTableToExcel('temp-votaciones-excel', 'Votacion_${v.id.substring(0,6)}')" class="text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded hover:bg-emerald-200 transition"><i class="fas fa-file-excel"></i> Excel</button>
                         <button onclick="imprimirVotacion('${v.id}')" class="text-xs font-bold bg-gray-800 text-white px-3 py-1.5 rounded hover:bg-gray-900 transition"><i class="fas fa-file-pdf"></i> Informe</button>
-                        <button onclick="closeVotacion('${v.id}')" class="text-xs font-bold bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 transition" ${v.cerrada ? 'disabled' : ''}><i class="fas fa-lock"></i> Cerrar votación</button>
+                        ${v.cerrada 
+                            ? `<button onclick="openVotacion('${v.id}')" class="text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition"><i class="fas fa-unlock"></i> Abrir votación</button>`
+                            : `<button onclick="closeVotacion('${v.id}')" class="text-xs font-bold bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 transition"><i class="fas fa-lock"></i> Cerrar votación</button>`
+                        }
                         <button onclick="deleteVotacion('${v.id}')" class="text-xs font-bold text-red-500 hover:text-red-700 uppercase ml-auto transition"><i class="fas fa-trash"></i> Eliminar</button>
                     </div>
                 `;
@@ -1924,7 +1927,8 @@
             if(v && v.votos && v.votos[currentUser.id]) { showToast("Ya registraste tu voto.", "info"); return; }
             update(ref(db, `votaciones/${id}/votos`), { [currentUser.id]: opcion });
         };
-        window.closeVotacion = async (id) => { await update(ref(db, `votaciones/${id}`), { cerrada: true }); };
+        window.closeVotacion = async (id) => { await update(ref(db, `votaciones/${id}`), { cerrada: true }); showToast("Votación cerrada", "info"); };
+        window.openVotacion = async (id) => { await update(ref(db, `votaciones/${id}`), { cerrada: false }); showToast("Votación abierta", "success"); };
         window.modalNuevaPropuesta = () => {
             const body = `<div class="space-y-4"><input id="v-pre" placeholder="Pregunta de la votación" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div>`;
             openModal("Crear Nueva Votación", body, async () => { 
