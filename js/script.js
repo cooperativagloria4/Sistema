@@ -1508,7 +1508,7 @@
                     const newRef = push(ref(dbCaja, 'movimientos'));
                     await set(newRef, {
                         fecha: fechaPago,
-                        descripcion: `Cobro cuota: ${cuota.concepto} - ${socio ? socio.apellidos : 'Socio Eliminado'}`,
+                        descripcion: `Cobro cuota: ${cuota.concepto} - ${socio ? `${socio.nombres} ${socio.apellidos}` : 'Socio Eliminado'}`,
                         monto: cuota.monto,
                         tipo: 'ingreso',
                         esCuota: true,
@@ -2285,7 +2285,7 @@
             if (bodyEl) bodyEl.innerHTML = body;
             if (actionBtn) {
                 actionBtn.textContent = 'Confirmar';
-                actionBtn.onclick = action;
+                actionBtn.onclick = action || closeModal;
             }
             document.getElementById('modal').classList.add('modal-active');
         };
@@ -3063,6 +3063,23 @@
                 
                 if (snap.exists()) {
                     const m = snap.val();
+                    let nombreSocio = m.descripcion.includes(' - ') ? m.descripcion.split(' - ')[1] : m.descripcion;
+
+                    // Si el movimiento tiene socioId en cuotaOriginal, intentamos obtener el nombre completo desde la base principal
+                    if (m.cuotaOriginal && m.cuotaOriginal.socioId) {
+                        try {
+                            const socioSnap = await get(ref(db, `socios/${m.cuotaOriginal.socioId}`));
+                            if (socioSnap.exists()) {
+                                const s = socioSnap.val();
+                                if (s.nombres && s.apellidos) {
+                                    nombreSocio = `${s.nombres} ${s.apellidos}`;
+                                }
+                            }
+                        } catch (err) {
+                            console.warn("No se pudo obtener el nombre completo del socio desde la base principal:", err);
+                        }
+                    }
+
                     const esValido = m.estado !== 'revertido';
                     
                     const statusHtml = esValido 
@@ -3092,7 +3109,7 @@
                                 </div>
                                 <div class="flex flex-col gap-1 border-b border-slate-200 pb-2">
                                     <span class="text-[10px] font-bold text-slate-400 uppercase">Socio</span>
-                                    <span class="font-bold text-blue-800 text-lg leading-tight">${m.descripcion.includes(' - ') ? m.descripcion.split(' - ')[1] : m.descripcion}</span>
+                                    <span class="font-bold text-blue-800 text-lg leading-tight">${nombreSocio}</span>
                                 </div>
                                 <div class="grid grid-cols-2 gap-4 border-b border-slate-200 pb-2">
                                     <div>
