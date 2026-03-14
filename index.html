@@ -302,22 +302,40 @@
 
                 <!-- Padron -->
                 <section id="sec-padron" class="hidden-section space-y-4">
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-3 flex-wrap">
-                        <h1 class="text-2xl font-bold">Padrón de Socios</h1>
-                        <div class="flex gap-2 flex-wrap items-center">
-                            <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border shadow-sm">
-                                <label class="text-xs font-bold text-gray-500 uppercase">Buscar Socio:</label>
-                                <input type="text" id="padron-search-socio" placeholder="Nombre o Apellido" oninput="renderPadron()" class="outline-none text-sm font-medium bg-gray-100 border border-gray-200 rounded-[15px] px-3 py-2 shadow-sm" />
+                    <!-- Header de Acción Primaria -->
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <h1 class="text-2xl font-bold text-slate-800">Padrón de Socios</h1>
+                        <button onclick="modalNuevoSocio()" class="w-full sm:w-auto bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fas fa-plus"></i> Nuevo Socio
+                        </button>
+                    </div>
+
+                    <!-- Barra de Filtros y Herramientas -->
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-4">
+                        <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                            <div class="relative w-full sm:w-64">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                    <i class="fas fa-search text-xs"></i>
+                                </span>
+                                <input type="text" id="padron-search-socio" placeholder="Buscar por nombre..." oninput="renderPadron()" class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition" />
                             </div>
-                            <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border shadow-sm">
-                                <label class="text-xs font-bold text-gray-500 uppercase">Manzana:</label>
-                                <input type="text" id="padron-search-manz" placeholder="Ej: A" oninput="renderPadron()" class="outline-none text-sm font-medium bg-gray-100 border border-gray-200 rounded-[15px] px-3 py-2 shadow-sm uppercase" />
+                            <div class="relative w-full sm:w-40">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                    <i class="fas fa-th text-xs"></i>
+                                </span>
+                                <input type="text" id="padron-search-manz" placeholder="Manzana..." oninput="renderPadron()" class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition uppercase" />
                             </div>
-                            <button onclick="modalNuevoSocio()" class="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-blue-700 transition"><i class="fas fa-plus"></i> Nuevo Socio</button>
-                            <button onclick="exportTableToExcel('table-padron', 'PadronSocios_Manzana-Lote')" class="bg-emerald-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold no-print hover:bg-emerald-700 transition"><i class="fas fa-file-excel"></i> Excel</button>
-                            <button onclick="printAislado('table-padron', 'PADRÓN DE SOCIOS')" class="bg-gray-800 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold no-print hover:bg-gray-900 transition"><i class="fas fa-print"></i> Imprimir</button>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
+                            <button onclick="exportTableToExcel('table-padron', 'PadronSocios_Manzana-Lote')" class="flex-1 sm:flex-none bg-emerald-50 text-emerald-700 border border-emerald-100 px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition flex items-center justify-center gap-2">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                            <button onclick="printAislado('table-padron', 'PADRÓN DE SOCIOS')" class="flex-1 sm:flex-none bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 hover:text-white transition flex items-center justify-center gap-2">
+                                <i class="fas fa-print"></i> Imprimir
+                            </button>
                         </div>
                     </div>
+
                     <div class="bg-white rounded-xl shadow">
                         <div class="overflow-x-auto">
                             <table id="table-padron" class="w-full text-left border-collapse min-w-max">
@@ -340,23 +358,41 @@
 
                 <!-- Cuotas -->
                 <section id="sec-cuotas" class="hidden-section space-y-4">
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-2">
-                        <h1 class="text-2xl font-bold">Control de Cuotas</h1>
-                        <div class="flex items-center gap-3 flex-wrap">
-                            <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border shadow-sm">
-                                <label class="text-xs font-bold text-gray-500 uppercase">Filtrar Mes:</label>
-                                <input type="month" id="cuotas-filter-month" onchange="renderCuotas()" class="outline-none text-sm font-medium bg-transparent">
-                            </div>
-                            <div id="admin-cuota-actions" class="flex gap-2 flex-wrap">
-                                <button onclick="modalGenerarCuota()" class="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-blue-700 transition">Generar Cobros</button>
-                                <button onclick="exportTableToExcel('table-cuotas', 'CuotasTotales')" class="bg-emerald-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-emerald-700 transition"><i class="fas fa-file-excel"></i> Excel</button>
-                                <button onclick="printAislado('table-cuotas', 'Reporte de Cuotas')" class="bg-gray-800 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-900 transition"><i class="fas fa-print"></i> Imprimir</button>
-                                <button onclick="reporteMorososPDF()" class="bg-gray-800 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-900 transition"><i class="fas fa-file-pdf"></i> Reporte de Morosos</button>
-                                <button onclick="reportePagadosPDF()" class="bg-gray-800 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-900 transition"><i class="fas fa-file-pdf"></i> Reporte de Pagados</button>
+                    <!-- Header de Acción Primaria -->
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <h1 class="text-2xl font-bold text-slate-800">Control de Cuotas</h1>
+                        <button onclick="modalGenerarCuota()" class="w-full sm:w-auto bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fas fa-plus-circle"></i> Generar Cobros
+                        </button>
+                    </div>
+
+                    <!-- Barra de Filtros y Herramientas -->
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-4">
+                        <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                            <div class="relative w-full sm:w-48">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                    <i class="fas fa-calendar-alt text-xs"></i>
+                                </span>
+                                <input type="month" id="cuotas-filter-month" onchange="renderCuotas()" class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition" />
                             </div>
                         </div>
+                        <div id="admin-cuota-actions" class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end flex-wrap">
+                            <button onclick="exportTableToExcel('table-cuotas', 'CuotasTotales')" class="flex-1 sm:flex-none bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-emerald-600 hover:text-white transition flex items-center justify-center gap-1.5">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                            <button onclick="printAislado('table-cuotas', 'Reporte de Cuotas')" class="flex-1 sm:flex-none bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-slate-800 hover:text-white transition flex items-center justify-center gap-1.5">
+                                <i class="fas fa-print"></i> Imprimir
+                            </button>
+                            <button onclick="reporteMorososPDF()" class="flex-1 sm:flex-none bg-red-50 text-red-700 border border-red-100 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-red-600 hover:text-white transition flex items-center justify-center gap-1.5">
+                                <i class="fas fa-file-pdf"></i> Morosos
+                            </button>
+                            <button onclick="reportePagadosPDF()" class="flex-1 sm:flex-none bg-blue-50 text-blue-700 border border-blue-100 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-blue-600 hover:text-white transition flex items-center justify-center gap-1.5">
+                                <i class="fas fa-file-pdf"></i> Pagados
+                            </button>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-500"><i class="fas fa-info-circle text-blue-500"></i> Las cuotas pagadas se eliminan de la base principal, pero se siguen mostrando aquí sincronizadas desde Caja para tu control.</p>
+
+                    <p class="text-xs text-slate-500 bg-blue-50 p-2.5 rounded-lg border border-blue-100"><i class="fas fa-info-circle text-blue-500 mr-1"></i> Las cuotas pagadas se sincronizan desde Caja para tu control histórico.</p>
                     <div class="bg-white rounded-xl shadow overflow-x-auto">
                         <table id="table-cuotas" class="w-full text-left border-collapse">
                             <thead>
@@ -379,16 +415,31 @@
 
                 <!-- Caja -->
                 <section id="sec-caja" class="hidden-section space-y-4">
-                    <div class="flex justify-between items-center flex-wrap gap-2">
-                        <h1 class="text-2xl font-bold">Gestión de Caja</h1>
-                        <div class="flex gap-2 flex-wrap">
-                            <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border shadow-sm">
-                                <label class="text-xs font-bold text-gray-500 uppercase">Mes:</label>
-                                <input type="month" id="caja-filter-month" onchange="renderCaja()" class="outline-none text-sm font-medium bg-transparent">
+                    <!-- Header de Acción Primaria -->
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <h1 class="text-2xl font-bold text-slate-800">Gestión de Caja</h1>
+                        <button onclick="modalCajaMov()" class="w-full sm:w-auto bg-green-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-green-700 transition active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fas fa-plus-circle"></i> Nuevo Movimiento
+                        </button>
+                    </div>
+
+                    <!-- Barra de Filtros y Herramientas -->
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-4">
+                        <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                            <div class="relative w-full sm:w-48">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                    <i class="fas fa-calendar-alt text-xs"></i>
+                                </span>
+                                <input type="month" id="caja-filter-month" onchange="renderCaja()" class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition" />
                             </div>
-                            <button onclick="modalCajaMov()" class="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-green-700 transition">Nuevo Movimiento</button>
-                            <button onclick="exportTableToExcel('table-caja', 'CajaMensual')" class="bg-emerald-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-emerald-700 transition"><i class="fas fa-file-excel"></i> Excel</button>
-                            <button onclick="printInformeCaja(event, document.getElementById('caja-filter-month').value)" class="bg-gray-800 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-900 transition"><i class="fas fa-print"></i> Imprimir</button>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
+                            <button onclick="exportTableToExcel('table-caja', 'CajaMensual')" class="flex-1 sm:flex-none bg-emerald-50 text-emerald-700 border border-emerald-100 px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition flex items-center justify-center gap-2">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                            <button onclick="printInformeCaja(event, document.getElementById('caja-filter-month').value)" class="flex-1 sm:flex-none bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 hover:text-white transition flex items-center justify-center gap-2">
+                                <i class="fas fa-print"></i> Imprimir
+                            </button>
                         </div>
                     </div>
                     
