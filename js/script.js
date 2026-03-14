@@ -417,7 +417,12 @@
         }
 
         function loginSuccess(user) {
-            try { console.clear(); } catch(_) {}
+            try { 
+                console.clear(); 
+                if ('scrollRestoration' in history) {
+                    history.scrollRestoration = 'manual';
+                }
+            } catch(_) {}
             currentUser = user;
             window.currentUser = user;
             document.getElementById('login-screen').classList.add('hidden');
@@ -442,12 +447,12 @@
                 ensureSocioStatusGuard(user);
             }
 
-            // Forzar scroll al inicio del documento y del contenedor de la app
-            window.scrollTo(0, 0);
-            const mainContent = document.querySelector('main');
-            if (mainContent) mainContent.scrollTop = 0;
-            const appContent = document.getElementById('app-content');
-            if (appContent) appContent.scrollTop = 0;
+            // Forzar scroll al inicio con un pequeño retraso para asegurar que el contenido se haya renderizado
+            setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+            }, 100);
 
             cargarDatosPerfil();
             initData();
@@ -526,8 +531,12 @@
             if(id === 'caja') renderCaja();
             if(id === 'sistema') renderSistema();
 
-            // Resetear scroll al cambiar de sección (especialmente en móvil)
-            window.scrollTo(0, 0);
+            // Resetear scroll al cambiar de sección (especialmente en móvil) con un pequeño retraso
+            setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+            }, 50);
 
             // Cerrar el menú lateral automáticamente en móviles
             if (window.innerWidth < 768) {
