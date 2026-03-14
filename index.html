@@ -14,7 +14,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=2.0">
+    <link rel="stylesheet" href="css/style.css?v=2.1">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -55,7 +55,7 @@
         <!-- Versión del Sistema en Login (Fuera del recuadro) -->
         <div class="mt-4 text-center">
             <p class="text-[9px] sm:text-[10px] text-slate-500 uppercase font-bold tracking-widest opacity-60">Sistema Cooperativa Gloria N°4 v.2</p>
-            <p class="text-[8px] sm:text-[9px] text-slate-500 mt-0.5 opacity-60">Versión 2.0 (Estable)</p>
+            <p class="text-[8px] sm:text-[9px] text-slate-500 mt-0.5 opacity-60">Versión 2.1</p>
         </div>
     </div>
 
@@ -72,11 +72,11 @@
                 >
                     <i class="fas fa-bars text-[#0f3f22] text-lg"></i>
                 </button>
-                <h2 class="text-[10px] leading-tight sm:text-lg md:text-xl font-bold text-[#0f3f22] truncate max-w-[120px] xs:max-w-none">Cooperativa Gloria N°4</h2>
+                <h2 class="text-[11px] leading-tight sm:text-lg md:text-xl font-bold text-[#0f3f22]">Cooperativa Gloria N°4</h2>
                 <span id="role-badge" class="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[8px] sm:text-xs font-bold uppercase whitespace-nowrap"></span>
             </div>
-            <div class="flex items-center gap-1.5 bg-[#f1f3f5] px-2 py-1 sm:px-3 sm:py-2 rounded-[30px] shadow-sm border border-gray-200 min-w-0 max-w-[55%] sm:max-w-[50%]">
-                <span id="user-display" class="font-medium text-[#0f3f22] text-[9px] sm:text-xs md:text-sm leading-tight truncate text-right flex-1"></span>
+            <div class="flex items-center gap-1 bg-[#f1f3f5] px-2 py-1 sm:px-3 sm:py-2 rounded-[30px] shadow-sm border border-gray-200 min-w-0 max-w-[45%] sm:max-w-[50%]">
+                <span id="user-display" class="font-medium text-[#0f3f22] text-[8px] xs:text-[9px] sm:text-xs md:text-sm leading-tight truncate text-right flex-1"></span>
                 <button
                     onclick="logout()"
                     class="text-red-600 hover:text-red-700 font-bold text-[9px] sm:text-xs md:text-sm uppercase px-2 py-1 sm:px-4 sm:py-2 rounded-[20px] text-center bg-white border border-red-200 flex-shrink-0 active:scale-95 transition-transform"
@@ -128,7 +128,7 @@
                 <!-- Versión del Sistema -->
                 <div class="pt-6 mt-6 border-t border-white/10 text-center">
                     <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Sistema Cooperativa Gloria N°4 v.2</p>
-                    <p class="text-[9px] text-slate-600 mt-1">Versión 2.0 (Estable)</p>
+                    <p class="text-[9px] text-slate-600 mt-1">Versión 2.1</p>
                 </div>
             </nav>
 
@@ -538,6 +538,6 @@
     <!-- Table oculta para exportar votaciones a excel -->
     <table id="temp-votaciones-excel" style="display:none;"></table>
 
-    <script type="module" src="js/script.js?v=2.0"></script>
+    <script type="module" src="js/script.js?v=2.1"></script>
 </body>
 </html>
