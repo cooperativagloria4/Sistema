@@ -1404,7 +1404,7 @@
             const filterMonth = document.getElementById('cuotas-filter-month').value;
             let pendientes = cuotasData;
             if(filterMonth) pendientes = pendientes.filter(c => c.fecha && c.fecha.startsWith(filterMonth));
-            let pagadas = allCajaMovs.filter(m => m.esCuota);
+            let pagadas = allCajaMovs.filter(m => m.esCuota && m.estado !== 'revertido');
             if(filterMonth) pagadas = pagadas.filter(m => m.fecha && m.fecha.startsWith(filterMonth));
 
             const combinadas = [
@@ -1671,24 +1671,34 @@
                 return;
             }
             const mov = allCajaMovs.find(m => m.id === movId);
-            if(mov && mov.cuotaOriginal) {
-                await push(ref(db, 'cuotas'), {
-                    socioId: mov.cuotaOriginal.socioId,
-                    concepto: mov.cuotaOriginal.concepto,
-                    monto: mov.monto,
-                    fecha: mov.cuotaOriginal.fechaEmision
-                });
-                
-                // En lugar de eliminar, marcamos como revertido para auditoría y validación QR
-                await update(ref(dbCaja, `movimientos/${movId}`), { 
-                    estado: 'revertido',
-                    revertidoPor: (currentUser && (currentUser.nombre || `${currentUser.nombres || ''} ${currentUser.apellidos || ''}`.trim())) || 'Sistema',
-                    fechaReversion: new Date().toISOString()
-                });
+            if(mov && mov.cuotaOriginal && mov.estado !== 'revertido') {
+                try {
+                    // Prevenir múltiples clics marcando localmente o deshabilitando
+                    mov.estado = 'revertido'; 
 
-                showToast("Pago revertido. La cuota vuelve a estar pendiente.", "success");
-                renderCuotas();
-                renderCaja();
+                    await push(ref(db, 'cuotas'), {
+                        socioId: mov.cuotaOriginal.socioId,
+                        concepto: mov.cuotaOriginal.concepto,
+                        monto: mov.monto,
+                        fecha: mov.cuotaOriginal.fechaEmision
+                    });
+                    
+                    // En lugar de eliminar, marcamos como revertido para auditoría y validación QR
+                    await update(ref(dbCaja, `movimientos/${movId}`), { 
+                        estado: 'revertido',
+                        revertidoPor: (currentUser && (currentUser.nombre || `${currentUser.nombres || ''} ${currentUser.apellidos || ''}`.trim())) || 'Sistema',
+                        fechaReversion: new Date().toISOString()
+                    });
+
+                    showToast("Pago revertido. La cuota vuelve a estar pendiente.", "success");
+                    renderCuotas();
+                    renderCaja();
+                } catch (e) {
+                    console.error("Error al revertir cuota:", e);
+                    showToast("Error al revertir el pago.", "error");
+                    // Restaurar estado si falló
+                    delete mov.estado;
+                }
             }
         };
         window.modalCajaMov = () => {
@@ -2843,7 +2853,7 @@
         };
         window.reportePagadosPDF = async () => {
             const mes = document.getElementById('cuotas-filter-month').value || new Date().toISOString().substring(0,7);
-            let pagadas = allCajaMovs.filter(m => m.esCuota);
+            let pagadas = allCajaMovs.filter(m => m.esCuota && m.estado !== 'revertido');
             if(mes) pagadas = pagadas.filter(m => m.cuotaOriginal && m.cuotaOriginal.fechaEmision && m.cuotaOriginal.fechaEmision.startsWith(mes));
             const rows = pagadas.map(m => {
                 const sid = m.cuotaOriginal && m.cuotaOriginal.socioId;
