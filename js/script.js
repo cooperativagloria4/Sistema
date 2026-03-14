@@ -2533,16 +2533,12 @@
                 const qrX = pageWidth - margin - 80;
                 const qrY = y - 10;
                 doc.addImage(qr.toDataURL(), 'PNG', qrX, qrY, 80, 80);
-                
-                doc.setFontSize(6);
-                doc.setFont('helvetica', 'normal');
-                doc.text('ESCANEAME PARA VALIDAR', qrX + 40, qrY + 88, { align: 'center' });
             } catch(e) {
                 console.error("Error generando QR:", e);
             }
 
             // --- LÍNEA DE FIRMA (CENTRO INFERIOR) ---
-            y += 40; // Aumentado para dar espacio al QR si es necesario
+            y += 20; // Reducido de 40 a 20 para quitar espacio (aprox 2 líneas)
             doc.setDrawColor(0, 0, 0);
             doc.line(pageWidth / 2 - 100, y, pageWidth / 2 + 100, y);
             
