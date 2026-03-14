@@ -427,7 +427,13 @@
             window.currentUser = user;
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-content').classList.remove('hidden');
-            document.getElementById('user-display').innerText = user.nombre || `${user.nombres || ''} ${user.apellidos || ''}`;
+            
+            const name = user.nombre || `${user.nombres || ''} ${user.apellidos || ''}`;
+            const display = document.getElementById('user-display');
+            if (display) display.innerText = name;
+            const mobileDisplay = document.getElementById('user-display-mobile');
+            if (mobileDisplay) mobileDisplay.innerText = name;
+
             console.log("Login exitoso para:", user.usuario || user.email || '');
             
             const badge = document.getElementById('role-badge');
@@ -447,12 +453,20 @@
                 ensureSocioStatusGuard(user);
             }
 
-            // Forzar scroll al inicio con un pequeño retraso para asegurar que el contenido se haya renderizado
-            setTimeout(() => {
-                window.scrollTo({ top: 0, behavior: 'instant' });
+            // Forzar scroll al inicio de forma más agresiva para navegadores móviles
+            const forceScrollTop = () => {
+                window.scrollTo(0, 0);
                 document.documentElement.scrollTop = 0;
                 document.body.scrollTop = 0;
-            }, 100);
+                const header = document.querySelector('header');
+                if (header) header.scrollIntoView({ behavior: 'instant', block: 'start' });
+            };
+
+            // Ejecutar inmediatamente y con varios retardos para asegurar que el DOM esté listo
+            forceScrollTop();
+            setTimeout(forceScrollTop, 50);
+            setTimeout(forceScrollTop, 150);
+            setTimeout(forceScrollTop, 300);
 
             cargarDatosPerfil();
             initData();
