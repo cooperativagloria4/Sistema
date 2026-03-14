@@ -174,8 +174,14 @@
                 return profile;
             }
             // Escaneo de admins/
-            const adminsSnap = await get(ref(db, 'admins'));
-            const adminsAll = adminsSnap.val() || {};
+            let adminsAll = {};
+            try {
+                const adminsSnap = await get(ref(db, 'admins'));
+                adminsAll = adminsSnap.val() || {};
+            } catch (e) {
+                console.log("Acceso restringido a lista de admins (Rol probable: Socio)");
+            }
+            
             if (adminsAll.root) {
                 const a = adminsAll.root;
                 if (a.uid && a.uid === uid) {
