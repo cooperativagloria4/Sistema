@@ -1,5 +1,5 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, update, remove, get, runTransaction, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+        import { getDatabase, ref, set, push, onValue, update, remove, get, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
         import { getAuth, setPersistence, inMemoryPersistence, browserLocalPersistence, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider, updateEmail, deleteUser, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         
         // ========================================================
@@ -162,88 +162,67 @@
             if (!fbUser) return null;
             const uid = fbUser.uid;
             const email = fbUser.email || '';
-
-            // 1. Verificar si el UID corresponde al Admin Raíz
-            if (uid === 'X4Mi3xnMqDYGUtPizGVdipl3Hog1') {
-                console.log("UID coincide con Admin Raíz. Intentando obtener perfil de 'admins/root'...");
-                try {
-                    const rootSnap = await get(ref(db, 'admins/root'));
-                    if (rootSnap.exists()) {
-                        const rootData = rootSnap.val() || {};
-                        return { ...rootData, id: 'root', uid, email, role: 'root', permisos: { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } };
-                    }
-                } catch(e) {
-                    console.warn("Error al leer admins/root:", e);
-                    // Si falla la lectura, devolvemos un perfil básico de root para no bloquear el acceso
-                    return { id: 'root', uid, email, role: 'root', usuario: 'root', nombre: 'Admin Raíz', permisos: { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } };
-                }
+            console.log(`Buscando UID [${uid}] en Admins...`);
+            // Intento directo por clave uid
+            const directAdmin = await get(ref(db, `admins/${uid}`));
+            if (directAdmin.exists()) {
+                const a = directAdmin.val() || {};
+                const role = a.role === 'root' ? 'root' : (a.role || 'admin');
+                const permisos = role === 'root' ? { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } : (a.permisos || {});
+                const profile = { ...a, id: uid, uid, email, role, permisos };
+                console.log(`Perfil encontrado: ${(a.nombre || a.nombres || a.usuario || email)} con Rol: ${role}`);
+                return profile;
             }
-
-            // 2. Intentar buscar como Administrador normal por UID
+            // Escaneo de admins/
+            let adminsAll = {};
             try {
-                console.log(`Buscando perfil para UID [${uid}] en admins/${uid}...`);
-                const adminSnap = await get(ref(db, `admins/${uid}`));
-                if (adminSnap.exists()) {
-                    const a = adminSnap.val() || {};
-                    const role = a.role || 'admin';
-                    const permisos = a.permisos || {};
-                    const profile = { ...a, id: uid, uid, email, role, permisos };
-                    console.log(`Perfil de Administrador encontrado: ${(a.nombre || a.usuario || email)}`);
-                    return profile;
-                }
-            } catch(e) {
-                console.log("No se pudo leer admins/$uid, buscando en socios...");
-            }
-
-            // 3. Si no es admin, intentar buscar como Socio por UID
-            try {
-                console.log(`Buscando perfil para UID [${uid}] en socios/${uid}...`);
-                const socioSnap = await get(ref(db, `socios/${uid}`));
-                if (socioSnap.exists()) {
-                    const s = socioSnap.val() || {};
-                    if (String(s.estado || '').toLowerCase() === 'inactivo') {
-                        throw new Error('ACCOUNT_INACTIVE');
-                    }
-                    const profile = { ...s, id: uid, uid, email, role: 'socio' };
-                    console.log(`Perfil de Socio encontrado: ${(s.nombres || s.usuario || email)}`);
-                    return profile;
-                }
-            } catch(e) {
-                if (e.message === 'ACCOUNT_INACTIVE') throw e;
-                console.log("No se pudo leer socios/$uid.");
+                const adminsSnap = await get(ref(db, 'admins'));
+                adminsAll = adminsSnap.val() || {};
+            } catch (e) {
+                console.log("Acceso restringido a lista de admins (Rol probable: Socio)");
             }
             
-            // 4. Si fallan las lecturas directas (debido a que los IDs en DB no son UIDs), intentamos búsqueda por escaneo (requiere permiso de lectura)
-            try {
-                console.log("Intentando búsqueda por escaneo de listas...");
-                const adminsSnap = await get(ref(db, 'admins'));
-                if (adminsSnap.exists()) {
-                    const admins = adminsSnap.val() || {};
-                    for (let id in admins) {
-                        if (admins[id] && admins[id].uid === uid) {
-                            const a = admins[id];
-                            return { ...a, id, uid, email, role: (id === 'root' ? 'root' : (a.role || 'admin')), permisos: a.permisos || {} };
-                        }
-                    }
+            if (adminsAll.root) {
+                const a = adminsAll.root;
+                if (a.uid && a.uid === uid) {
+                    const role = 'root';
+                    const profile = { ...a, id: 'root', uid, email, role, permisos: { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } };
+                    console.log(`Perfil encontrado: ${(a.nombre || a.nombres || a.usuario || email)} con Rol: ${role}`);
+                    return profile;
                 }
-                
-                const sociosSnap = await get(ref(db, 'socios'));
-                if (sociosSnap.exists()) {
-                    const socios = sociosSnap.val() || {};
-                    for (let id in socios) {
-                        if (socios[id] && socios[id].uid === uid) {
-                            const s = socios[id];
-                            if (String(s.estado || '').toLowerCase() === 'inactivo') throw new Error('ACCOUNT_INACTIVE');
-                            return { ...s, id, uid, email, role: 'socio' };
-                        }
-                    }
-                }
-            } catch(e) {
-                if (e.message === 'ACCOUNT_INACTIVE') throw e;
-                console.error("Error en escaneo de listas:", e);
             }
-
-            console.log(`No se pudo encontrar ningún perfil válido para el UID [${uid}].`);
+            for (const [id, a] of Object.entries(adminsAll)) {
+                if (!a) continue;
+                if ((a.uid && a.uid === uid)) {
+                    const role = id === 'root' || a.role === 'root' ? 'root' : (a.role || 'admin');
+                    const permisos = role === 'root' ? { padron: true, cuotas: true, caja: true, asambleas: true, votaciones: true } : (a.permisos || {});
+                    const profile = { ...a, id, uid, email, role, permisos };
+                    console.log(`Perfil encontrado: ${(a.nombre || a.nombres || a.usuario || email)} con Rol: ${role}`);
+                    return profile;
+                }
+            }
+            console.log(`Buscando UID [${uid}] en Socios...`);
+            // Intento directo por clave uid
+            const socioDirect = await get(ref(db, `socios/${uid}`));
+            if (socioDirect.exists()) {
+                const s = socioDirect.val() || {};
+                if (String(s.estado || '').toLowerCase() === 'inactivo') { throw new Error('ACCOUNT_INACTIVE'); }
+                const profile = { ...s, id: uid, uid, email, role: 'socio' };
+                console.log(`Perfil encontrado: ${(s.nombres || s.nombre || s.usuario || email)} con Rol: socio`);
+                return profile;
+            }
+            // Escaneo de socios/
+            const sociosSnap = await get(ref(db, 'socios'));
+            const sociosAll = sociosSnap.val() || {};
+            for (const [id, s] of Object.entries(sociosAll)) {
+                if (!s) continue;
+                if (s.uid && s.uid === uid) {
+                    if (String(s.estado || '').toLowerCase() === 'inactivo') { throw new Error('ACCOUNT_INACTIVE'); }
+                    const profile = { ...s, id, uid, email, role: 'socio' };
+                    console.log(`Perfil encontrado: ${(s.nombres || s.nombre || s.usuario || email)} con Rol: socio`);
+                    return profile;
+                }
+            }
             return null;
         }
 
@@ -262,49 +241,28 @@
             }
             const email = `${usuario}@urbgloria.com`;
             try {
-                console.log("Intentando autenticación con Firebase Auth...");
                 await signInWithEmailAndPassword(auth, email, pass);
-                
-                // Login opcional en Caja (si falla no detiene el proceso)
-                try { 
-                    await signInWithEmailAndPassword(authCaja, email, pass); 
-                    console.log("Login en Auth Caja: OK");
-                } catch(errCaja) { 
-                    console.warn("Login en Auth Caja: FALLÓ (No crítico si es socio)"); 
-                }
-
+                try { await signInWithEmailAndPassword(authCaja, email, pass); } catch(_) {}
                 const fbUser = auth.currentUser;
-                console.log("Autenticación Firebase: EXITOSA. Buscando perfil...");
-                
+                console.log("Login exitoso para:", usuario);
                 const perfil = await obtenerPerfil(fbUser);
                 if (perfil) {
                     loginSuccess(perfil);
                 } else {
                     const el = document.getElementById('login-error');
                     el.classList.remove('hidden');
-                    el.innerText = "Usuario autenticado correctamente, pero no se encontró su perfil en la base de datos.";
+                    el.innerText = "Usuario autenticado pero sin perfil asignado. Contacte al soporte";
                     await signOut(auth);
                     return;
                 }
             } catch (e) {
-                console.error("Error en handleLogin:", e);
                 const el = document.getElementById('login-error');
                 el.classList.remove('hidden');
-                
                 const inactive = e && ((e.message && e.message === 'ACCOUNT_INACTIVE') || (e.code && e.code === 'ACCOUNT_INACTIVE'));
                 const tooMany = e && e.code === 'auth/too-many-requests';
-                const authError = e && (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential');
-                
-                if (inactive) {
-                    el.innerText = 'Acceso denegado: Tu cuenta se encuentra inactiva. Por favor, comunícate con la administración.';
-                } else if (tooMany) {
-                    el.innerText = 'Demasiados intentos. Por favor, espera unos minutos.';
-                } else if (authError) {
-                    el.innerText = 'Usuario o contraseña incorrectos.';
-                } else {
-                    el.innerText = `Error al ingresar: ${e.code || 'Error de red o conexión'}. Verifique su conexión e intente nuevamente.`;
-                }
-                
+                el.innerText = inactive
+                    ? 'Acceso denegado: Tu cuenta se encuentra inactiva. Por favor, comunícate con la administración de la Cooperativa.'
+                    : (tooMany ? 'Demasiados intentos de acceso. Espera unos minutos antes de volver a intentar.' : ((e && e.code) ? `Error de acceso: ${e.code}` : 'Credenciales inválidas o error de red'));
                 try { await signOut(auth); } catch(_) {}
             }
         };
@@ -654,28 +612,9 @@
         onValue(ref(db, 'cuotas'), (snap) => {
             const data = snap.val();
             cuotasData = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
-            console.log(`[Cuotas] ${cuotasData.length} registros cargados.`);
             if(currentUser.role === 'root' || (currentUser.role === 'admin' && currentUser.permisos?.cuotas)) renderCuotas();
             if(currentUser.role === 'socio') renderSocioDashboard();
             updateCharts();
-        }, (err) => {
-            console.error("[Cuotas] Error de lectura:", err);
-            // Si falla la lectura global (típico de reglas restrictivas para socios), 
-            // intentamos una consulta específica para el socio actual
-            if(currentUser && currentUser.role === 'socio' && currentUser.id) {
-                console.log(`[Cuotas] Intentando consulta específica para socio ${currentUser.id}`);
-                const qSocio = query(ref(db, 'cuotas'), orderByChild('socioId'), equalTo(currentUser.id));
-                onValue(qSocio, (snapSocio) => {
-                    const dataSocio = snapSocio.val();
-                    cuotasData = dataSocio ? Object.entries(dataSocio).map(([id, val]) => ({ id, ...val })) : [];
-                    renderSocioDashboard();
-                }, (err2) => {
-                    console.error("[Cuotas] Error en consulta específica:", err2);
-                    renderSocioDashboard();
-                });
-            } else {
-                renderSocioDashboard();
-            }
         });
             onValue(ref(db, 'asambleas'), (snap) => {
                 const data = snap.val();
@@ -703,19 +642,6 @@
                 if(currentUser.role === 'root' || (currentUser.role === 'admin' && currentUser.permisos?.votaciones)) renderVotaciones();
                 if(currentUser.role === 'socio') renderSocioDashboard();
             });
-            // Escuchar pagos históricos del socio en la DB principal
-            if (currentUser.role === 'socio') {
-                onValue(ref(db, `pagosSocios/${currentUser.id}`), (snap) => {
-                    const data = snap.val();
-                    const pagosHistoricos = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
-                    // Mezclamos con los de Caja si existen, evitando duplicados por ID
-                    const existingIds = new Set(socioCajaMovs.map(m => m.id));
-                    pagosHistoricos.forEach(p => {
-                        if (!existingIds.has(p.id)) socioCajaMovs.push(p);
-                    });
-                    renderSocioDashboard();
-                });
-            }
             // Escuchar configuración de correlativos en Caja
              onValue(ref(dbCaja, 'config/correlativos'), (snap) => {
                  const val = snap.val() || {};
@@ -735,40 +661,27 @@
         }
         async function ensureCajaSubscriptionForSocio() {
             if (cajaSocioUnsub) { try { cajaSocioUnsub(); } catch(_) {} cajaSocioUnsub = null; }
-            
-            // Intentar lectura global (solo funcionará si las reglas lo permiten)
             const qRef = ref(dbCaja, 'movimientos');
-            
-            const handleData = (snap) => {
+            try {
+                const snap = await get(qRef);
+                if (snap.exists()) {
+                    const data = snap.val() || {};
+                    const all = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+                    socioCajaMovs = all.filter(m => m && m.esCuota && m.estado !== 'revertido' && m.cuotaOriginal && m.cuotaOriginal.socioId === (currentUser && currentUser.id));
+                    renderSocioDashboard();
+                } else {
+                    socioCajaMovs = [];
+                }
+            } catch(_) {}
+            cajaSocioUnsub = onValue(qRef, (snap) => {
                 const data = snap.val() || {};
                 const all = Object.entries(data).map(([id, val]) => ({ id, ...val }));
                 socioCajaMovs = all.filter(m => m && m.esCuota && m.estado !== 'revertido' && (
                     (m.cuotaOriginal && m.cuotaOriginal.socioId === (currentUser && currentUser.id)) ||
                     (m.socioId && m.socioId === (currentUser && currentUser.id))
                 ));
-                console.log(`[Caja-Socio] ${socioCajaMovs.length} movimientos de cuotas encontrados.`);
                 renderSocioDashboard();
-            };
-
-            try {
-                const snap = await get(qRef);
-                if (snap.exists()) {
-                    handleData(snap);
-                } else {
-                    socioCajaMovs = [];
-                    renderSocioDashboard();
-                }
-            } catch(err) {
-                console.warn("[Caja-Socio] Error en lectura global de movimientos, es posible que las reglas lo restrinjan.", err);
-                // Si falla la lectura global, el socio no podrá ver sus cuotas pagadas 
-                // a menos que las reglas permitan una consulta específica o lectura pública.
-                socioCajaMovs = [];
-                renderSocioDashboard();
-            }
-
-            cajaSocioUnsub = onValue(qRef, handleData, (err) => {
-                console.error("[Caja-Socio] Error en suscripción de movimientos:", err);
-            });
+            }, (_) => {});
         }
 
         window.syncSociosToAuth = async () => {
@@ -1593,9 +1506,9 @@
                 } catch(_) {}
                 try {
                     const newRef = push(ref(dbCaja, 'movimientos'));
-                    const pagoData = {
+                    await set(newRef, {
                         fecha: fechaPago,
-                        descripcion: `Cobro cuota: ${cuota.concepto} - ${socio ? (socio.nombres + ' ' + socio.apellidos) : 'Socio Eliminado'}`,
+                        descripcion: `Cobro cuota: ${cuota.concepto} - ${socio ? socio.apellidos : 'Socio Eliminado'}`,
                         monto: cuota.monto,
                         tipo: 'ingreso',
                         esCuota: true,
@@ -1607,18 +1520,7 @@
                             concepto: cuota.concepto,
                             fechaEmision: cuota.fecha || new Date().toISOString().split('T')[0]
                         }
-                    };
-                    await set(newRef, pagoData);
-                    
-                    // Sincronizar con la DB Principal para que el socio pueda ver su historial sin depender de permisos de Caja
-                    try {
-                        await set(ref(db, `pagosSocios/${cuota.socioId}/${newRef.key}`), {
-                            ...pagoData,
-                            cajaMovId: newRef.key
-                        });
-                    } catch(errSync) {
-                        console.error("Error al sincronizar pago con DB Principal:", errSync);
-                    }
+                    });
                     
                     const parts = numeroRecibo.split('-');
                     const lastPart = parts[parts.length - 1];
@@ -1783,13 +1685,6 @@
                     revertidoPor: (currentUser && (currentUser.nombre || `${currentUser.nombres || ''} ${currentUser.apellidos || ''}`.trim())) || 'Sistema',
                     fechaReversion: new Date().toISOString()
                 });
-
-                // También revertir en la DB Principal
-                try {
-                    await remove(ref(db, `pagosSocios/${mov.cuotaOriginal.socioId}/${movId}`));
-                } catch(errSync) {
-                    console.error("Error al revertir pago en DB Principal:", errSync);
-                }
 
                 showToast("Pago revertido. La cuota vuelve a estar pendiente.", "success");
                 renderCuotas();
@@ -3235,7 +3130,7 @@
                         </div>
                     `;
                     
-                    openModal("Verificación Oficial de Recibo", body, closeModal);
+                    openModal("Verificación Oficial de Recibo", body);
                 } else {
                     const body = `
                         <div class="text-center py-8 space-y-4">
@@ -3250,7 +3145,7 @@
                             </p>
                         </div>
                     `;
-                    openModal("Alerta de Seguridad", body, closeModal);
+                    openModal("Alerta de Seguridad", body);
                 }
             } catch (e) {
                 console.error("Error al validar QR:", e);
@@ -3273,7 +3168,7 @@
                             </div>
                         </div>
                     `;
-                    openModal("Configuración Requerida", body, closeModal);
+                    openModal("Configuración Requerida", body);
                 } else {
                     showToast("Error de conexión al servidor de validación", "error");
                 }
