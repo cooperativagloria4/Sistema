@@ -2441,14 +2441,29 @@
             let y = 30;
 
             // --- MARCA DE AGUA (Sello de Seguridad) ---
-            doc.setTextColor(200, 200, 200); // Color un poco más oscuro
-            doc.setFontSize(45);
+            // Usamos un gris muy claro para asegurar compatibilidad si GState falla
+            doc.setTextColor(220, 220, 220); 
+            doc.setFontSize(50);
             doc.setFont('helvetica', 'bold');
-            doc.saveGraphicsState();
-            doc.setGState(new doc.GState({ opacity: 0.15 })); // Opacidad un poco mayor
-            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, 220, { align: 'center', angle: 45 });
-            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, 340, { align: 'center', angle: 45 });
-            doc.restoreGraphicsState();
+            
+            // Intentamos aplicar transparencia si está disponible
+            try {
+                doc.saveGraphicsState();
+                doc.setGState(new doc.GState({ opacity: 0.2 }));
+            } catch(e) {
+                console.log("Transparencia GState no soportada, usando color plano claro");
+            }
+
+            // Dibujamos en el centro de la página
+            doc.text('DOCUMENTO OFICIAL', pageWidth / 2, pageHeight / 2 - 60, { align: 'center', angle: 45 });
+            doc.text('COOPERATIVA GLORIA N° 4', pageWidth / 2, pageHeight / 2 + 40, { align: 'center', angle: 45 });
+
+            try {
+                doc.restoreGraphicsState();
+            } catch(e) {}
+
+            // Resetear color para el resto del contenido
+            doc.setTextColor(0, 0, 0);
 
             // --- CABECERA CENTRADA ---
             doc.setTextColor(0, 0, 0);
