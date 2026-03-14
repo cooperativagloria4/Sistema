@@ -2329,7 +2329,7 @@
             const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
             const pageWidth = doc.internal.pageSize.getWidth();
             const margin = 40;
-            let y = 50;
+            let y = 30; // Reducido el margen superior de 50 a 30
 
             // --- CABECERA CENTRADA ---
             doc.setFontSize(13);
@@ -2344,7 +2344,7 @@
             const boxWidth = 100;
             const boxHeight = 25;
             const boxX = pageWidth - margin - boxWidth;
-            const boxY = 38; // Bajado de 25 a 38 para alinear verticalmente con el texto de la cooperativa (y=50)
+            const boxY = 18; // Ajustado de 38 a 18 para mantener alineación con el nuevo margen superior (y=30)
 
             doc.setFillColor(191, 219, 254);
             doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 8, 8, 'F');
@@ -2360,7 +2360,7 @@
             doc.text(`Nº: ${data.numeroRecibo}`, boxX + boxWidth / 2, boxY + boxHeight + 12, { align: 'center' });
 
             // --- CUERPO DEL RECIBO (LEFT) ---
-            y = 100; // Ajustado de 90 a 100 para dar aire tras la cabecera
+            y = 80; // Ajustado de 100 a 80 siguiendo el nuevo margen superior
             const labelX = margin;
             const valueX = margin + 100;
             const lineHeight = 18;
@@ -2389,7 +2389,7 @@
             // Se eliminó el texto "FIRMA" debajo de la línea
             
             // Pie de página (más cerca del final del contenido)
-            y += 30;
+            y += 66; // Aumentado de 30 a 66 para bajar el texto 2 líneas aprox
             const now = new Date();
             const pad = n => String(n).padStart(2,'0');
             const fechaGen = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} a las ${pad(now.getHours())}:${pad(now.getMinutes())}`;
