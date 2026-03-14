@@ -2,7 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
     <title>Sistema Cooperativa Gloria N°4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,7 +14,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=3.7">
+    <link rel="stylesheet" href="css/style.css?v=2.0">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -19,65 +22,64 @@
     <div id="toast-container"></div>
 
     <!-- Login Screen -->
-    <div id="login-screen" class="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center z-50">
-        <div class="login-modern w-full max-w-md p-8 rounded-[20px] shadow-2xl border border-white/30 bg-white/60 backdrop-blur-md">
+    <div id="login-screen" class="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center z-50 p-4">
+        <div class="login-modern w-full max-w-md p-6 sm:p-8 rounded-[20px] shadow-2xl border border-white/30 bg-white/60 backdrop-blur-md" style="-webkit-backdrop-filter: blur(12px);">
             <div class="flex flex-col items-center mb-4">
-                <svg width="64" height="64" viewBox="0 0 64 64" fill="none" class="mb-2">
+                <svg width="48" height="48" viewBox="0 0 64 64" fill="none" class="mb-2 sm:w-[64px] sm:h-[64px]">
                     <path d="M8 36L24 22L40 36V56H8V36Z" fill="#10B981"/>
                     <path d="M28 28L40 18L56 30V56H40V36L28 28Z" fill="#0ea5e9" opacity="0.85"/>
                     <circle cx="50" cy="14" r="6" fill="#10B981" opacity="0.9"/>
                 </svg>
-                <h1 class="text-xl font-semibold text-center text-slate-800">Cooperativa Gloria N°4</h1>
+                <h1 class="text-lg sm:text-xl font-semibold text-center text-slate-800">Cooperativa Gloria N°4</h1>
             </div>
             <div class="space-y-4">
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                         <i class="fa-solid fa-user"></i>
                     </span>
-                    <input type="text" id="login-user" placeholder="Usuario" class="w-full pl-10 pr-3 py-3 rounded-xl bg-gray-100 border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition" />
+                    <input type="text" id="login-user" placeholder="Usuario" class="w-full pl-10 pr-3 py-3 rounded-xl bg-gray-100 border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition text-base" />
                 </div>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                         <i class="fa-solid fa-lock"></i>
                     </span>
-                    <input type="password" id="login-pass" placeholder="Contraseña" class="w-full pl-10 pr-12 py-3 rounded-xl bg-gray-100 border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition" />
+                    <input type="password" id="login-pass" placeholder="Contraseña" class="w-full pl-10 pr-12 py-3 rounded-xl bg-gray-100 border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition text-base" />
                     <button type="button" aria-label="Mostrar u ocultar contraseña" onclick="toggleLoginPass(this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-700 transition">
                         <i class="fa-solid fa-eye"></i>
                     </button>
                 </div>
-                <button onclick="handleLogin()" class="w-full bg-[#14532d] hover:bg-[#0f3f22] text-white py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-transform duration-150 hover:-translate-y-0.5">Ingresar</button>
+                <button onclick="handleLogin()" class="w-full bg-[#14532d] hover:bg-[#0f3f22] text-white py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-transform duration-150 active:scale-95">Ingresar</button>
             </div>
-            <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden">Credenciales inválidas o cuenta inactiva</p>
+            <p id="login-error" class="text-red-500 text-xs sm:text-sm mt-4 text-center hidden">Credenciales inválidas o cuenta inactiva</p>
         </div>
         <!-- Versión del Sistema en Login (Fuera del recuadro) -->
         <div class="mt-4 text-center">
-            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest opacity-60">Sistema Cooperativa Gloria N°4 v.3</p>
-            <p class="text-[9px] text-slate-500 mt-0.5 opacity-60">Versión 3.7 (Estable)</p>
+            <p class="text-[9px] sm:text-[10px] text-slate-500 uppercase font-bold tracking-widest opacity-60">Sistema Cooperativa Gloria N°4 v.2</p>
+            <p class="text-[8px] sm:text-[9px] text-slate-500 mt-0.5 opacity-60">Versión 2.0 (Estable)</p>
         </div>
     </div>
 
     <!-- Main App -->
     <div id="app-content" class="hidden flex flex-col h-screen">
         <!-- Header -->
-        <header class="bg-white border-b px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center no-print z-20 gap-2">
-            <div class="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                <h2 class="text-[11px] leading-tight sm:text-lg md:text-xl font-bold text-[#0f3f22] break-words">Cooperativa Gloria N°4</h2>
-                <span id="role-badge" class="flex-shrink-0 px-2 py-0.5 rounded-full text-[9px] sm:text-xs font-bold uppercase whitespace-nowrap"></span>
-                <!-- Botón hamburguesa solo en móvil -->
+        <header class="bg-white border-b px-2 py-2 sm:px-4 sm:py-3 flex justify-between items-center no-print z-20 gap-1 sm:gap-2">
+            <div class="flex items-center gap-1.5 sm:gap-4 min-w-0 flex-1">
                 <button
                     type="button"
                     onclick="toggleSidebar()"
-                    class="md:hidden inline-flex items-center justify-center p-1.5 rounded-md hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 flex-shrink-0"
+                    class="md:hidden inline-flex items-center justify-center p-2 rounded-md hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 flex-shrink-0"
                     aria-label="Abrir menú de navegación"
                 >
-                    <i class="fas fa-bars text-[#0f3f22]"></i>
+                    <i class="fas fa-bars text-[#0f3f22] text-lg"></i>
                 </button>
+                <h2 class="text-[10px] leading-tight sm:text-lg md:text-xl font-bold text-[#0f3f22] truncate max-w-[120px] xs:max-w-none">Cooperativa Gloria N°4</h2>
+                <span id="role-badge" class="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[8px] sm:text-xs font-bold uppercase whitespace-nowrap"></span>
             </div>
-            <div class="flex items-center gap-2 bg-[#f1f3f5] px-2 py-1.5 sm:px-3 sm:py-2 rounded-[30px] shadow-sm border border-gray-200 min-w-0 max-w-[50%]">
-                <span id="user-display" class="font-medium text-[#0f3f22] text-[10px] sm:text-xs md:text-sm leading-tight break-words text-right"></span>
+            <div class="flex items-center gap-1.5 bg-[#f1f3f5] px-2 py-1 sm:px-3 sm:py-2 rounded-[30px] shadow-sm border border-gray-200 min-w-0 max-w-[55%] sm:max-w-[50%]">
+                <span id="user-display" class="font-medium text-[#0f3f22] text-[9px] sm:text-xs md:text-sm leading-tight truncate text-right flex-1"></span>
                 <button
                     onclick="logout()"
-                    class="text-red-600 hover:text-red-700 font-bold text-[10px] sm:text-xs md:text-sm uppercase px-2 py-1 sm:px-4 sm:py-2 rounded-[20px] text-center bg-white border border-red-200 flex-shrink-0"
+                    class="text-red-600 hover:text-red-700 font-bold text-[9px] sm:text-xs md:text-sm uppercase px-2 py-1 sm:px-4 sm:py-2 rounded-[20px] text-center bg-white border border-red-200 flex-shrink-0 active:scale-95 transition-transform"
                 >
                     Salir
                 </button>
@@ -125,8 +127,8 @@
 
                 <!-- Versión del Sistema -->
                 <div class="pt-6 mt-6 border-t border-white/10 text-center">
-                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Sistema Cooperativa Gloria N°4 v.3</p>
-                    <p class="text-[9px] text-slate-600 mt-1">Versión 3.7 (Estable)</p>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Sistema Cooperativa Gloria N°4 v.2</p>
+                    <p class="text-[9px] text-slate-600 mt-1">Versión 2.0 (Estable)</p>
                 </div>
             </nav>
 
@@ -536,6 +538,6 @@
     <!-- Table oculta para exportar votaciones a excel -->
     <table id="temp-votaciones-excel" style="display:none;"></table>
 
-    <script type="module" src="js/script.js?v=3.7"></script>
+    <script type="module" src="js/script.js?v=2.0"></script>
 </body>
 </html>

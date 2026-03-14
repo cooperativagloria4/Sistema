@@ -14,11 +14,17 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-soft) !important; 
 #app-content { 
     background: linear-gradient(180deg, rgba(248,249,250,1) 0%, rgba(246,248,249,1) 100%); 
     font-family: 'Poppins', sans-serif; 
+    overflow: hidden; /* Prevent body scroll if app-content is full screen */
+}
+
+main {
+    -webkit-overflow-scrolling: touch; /* Smooth scroll for iOS */
 }
 
 header { 
     background: rgba(255,255,255,0.6) !important; 
     backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px); /* Safari support */
     border-bottom: 1px solid rgba(255,255,255,0.4); 
     box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
 }
@@ -66,6 +72,7 @@ section h1 {
 .glass-card { 
     background: rgba(255,255,255,0.7); 
     backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px); /* Safari support */
     border: 1px solid rgba(255,255,255,0.35); 
     border-radius: 20px; 
 }
@@ -201,25 +208,46 @@ input:focus, select:focus, textarea:focus {
         width: 95% !important;
         margin: auto;
         border-radius: 15px;
+        max-height: 90vh;
     }
     
     #modal-body {
-        padding: 1.25rem !important;
+        padding: 1rem !important;
     }
 
-    /* Tablas responsivas */
+    /* Tablas responsivas mejoradas */
     .overflow-x-auto {
         -webkit-overflow-scrolling: touch;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+        box-shadow: inset -10px 0 10px -10px rgba(0,0,0,0.1); /* Sombra para indicar scroll */
     }
     
     table thead th, table tbody td {
         padding: 0.75rem 0.5rem !important;
-        font-size: 0.75rem !important;
+        font-size: 0.7rem !important;
+        white-space: nowrap; /* Evitar que el texto se rompa en mil líneas */
+    }
+
+    /* Botones en tablas móviles */
+    table button {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.7rem !important;
     }
 
     /* Dashboard Socio Cards */
     .widget-asamblea, .widget-votacion, .widget-informe {
         padding: 1rem !important;
+    }
+
+    /* Ajustes de espaciado en secciones */
+    main {
+        padding: 1rem !important;
+    }
+
+    /* Evitar que los inputs sean muy pequeños */
+    input, select, textarea {
+        font-size: 16px !important; /* Evita zoom automático en iOS Safari al enfocar */
     }
 }
 
