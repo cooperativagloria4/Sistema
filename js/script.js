@@ -2,12 +2,6 @@
         import { getDatabase, ref, set, push, onValue, update, remove, get, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
         import { getAuth, setPersistence, inMemoryPersistence, browserLocalPersistence, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider, updateEmail, deleteUser, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         
-        // Desactivar restauración de scroll del navegador inmediatamente
-        if ('scrollRestoration' in history) {
-            history.scrollRestoration = 'manual';
-        }
-        window.scrollTo(0, 0);
-
         // ========================================================
         // CREDENCIALES (Puestas aquí para compatibilidad con GitHub Pages)
         // ========================================================
@@ -251,7 +245,7 @@
                 try { await signInWithEmailAndPassword(authCaja, email, pass); } catch(_) {}
                 const fbUser = auth.currentUser;
                 console.log("Login exitoso para:", usuario);
-                const perfil = await findProfileAfterAuth(fbUser, usuario);
+                const perfil = await obtenerPerfil(fbUser);
                 if (perfil) {
                     loginSuccess(perfil);
                 } else {
@@ -276,20 +270,9 @@
         onAuthStateChanged(auth, async (fbUser) => {
             if (fbUser) {
                 try {
-                    // Si ya tenemos el currentUser, no necesitamos volver a obtener el perfil
-                    if (window.currentUser && window.currentUser.uid === fbUser.uid) {
-                        return;
-                    }
                     const perfil = await obtenerPerfil(fbUser);
-                    if (perfil) {
-                        loginSuccess(perfil);
-                    } else {
-                        console.warn("Sesión detectada pero perfil no encontrado para UID:", fbUser.uid);
-                        // No cerramos sesión automáticamente aquí para evitar bucles si obtenerPerfil falla temporalmente
-                    }
-                } catch (e) {
-                    console.error("Error en onAuthStateChanged:", e);
-                }
+                    if (perfil) loginSuccess(perfil);
+                } catch (_) {}
             } else {
                 window.currentUser = null;
                 currentUser = null;
@@ -434,77 +417,58 @@
         }
 
         function loginSuccess(user) {
-            try {
-                console.log("Iniciando loginSuccess para:", user.usuario || user.id);
-                
-                // Forzar scroll al inicio de forma inmediata y global
+            try { console.clear(); } catch(_) {}
+            
+            // Forzar scroll al inicio en móviles (especialmente Chrome)
+            try { 
                 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+            } catch(_) {}
+
+            currentUser = user;
+            window.currentUser = user;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-content').classList.remove('hidden');
+            document.getElementById('user-display').innerText = user.nombre || `${user.nombres || ''} ${user.apellidos || ''}`;
+            console.log("Login exitoso para:", user.usuario || user.email || '');
+            
+            const badge = document.getElementById('role-badge');
+            badge.innerText = user.role === 'root' ? 'Admin Raíz' : (user.role === 'admin' ? 'Administrador' : 'Socio');
+            badge.className = (user.role === 'root' || user.role === 'admin')
+                ? 'bg-red-600 text-white px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold uppercase whitespace-nowrap'
+                : 'bg-blue-600 text-white px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold uppercase whitespace-nowrap';
+
+            limpiarInterfaz();
+
+            if (user.role === 'root' || user.role === 'admin') { 
+                mostrarSeccionAdmin(user); 
+                updateCharts();
+            }
+            else if (user.role === 'socio') { 
+                mostrarSeccionSocio(); 
+                ensureSocioStatusGuard(user);
+            }
+
+            // Función robusta para resetear el scroll
+            const forceScrollTop = () => {
                 window.scrollTo(0, 0);
                 document.documentElement.scrollTop = 0;
                 document.body.scrollTop = 0;
+                const main = document.querySelector('main');
+                if (main) main.scrollTop = 0;
+                const header = document.querySelector('header');
+                if (header) header.scrollIntoView({ behavior: 'instant', block: 'start' });
+            };
 
-                currentUser = user;
-                window.currentUser = user;
-                
-                // Ocultar login y mostrar app
-                const loginScreen = document.getElementById('login-screen');
-                const appContent = document.getElementById('app-content');
-                
-                if (loginScreen) loginScreen.classList.add('hidden');
-                if (appContent) {
-                    appContent.classList.remove('hidden');
-                    // Forzar que el contenedor no tenga scroll heredado
-                    appContent.scrollTop = 0;
-                }
+            forceScrollTop();
+            setTimeout(forceScrollTop, 50);
+            setTimeout(forceScrollTop, 150);
+            setTimeout(forceScrollTop, 300);
+            setTimeout(forceScrollTop, 600); // Un intento extra para conexiones lentas
 
-                const userDisplay = document.getElementById('user-display');
-                if (userDisplay) {
-                    userDisplay.innerText = user.nombre || `${user.nombres || ''} ${user.apellidos || ''}`;
-                }
-                
-                const badge = document.getElementById('role-badge');
-                if (badge) {
-                    badge.innerText = user.role === 'root' ? 'Admin Raíz' : (user.role === 'admin' ? 'Administrador' : 'Socio');
-                    badge.className = (user.role === 'root' || user.role === 'admin')
-                        ? 'bg-red-600 text-white px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold uppercase whitespace-nowrap'
-                        : 'bg-blue-600 text-white px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold uppercase whitespace-nowrap';
-                }
-
-                limpiarInterfaz();
-
-                if (user.role === 'root' || user.role === 'admin') { 
-                    mostrarSeccionAdmin(user); 
-                    try { updateCharts(); } catch(e) { console.error("Error al actualizar gráficos:", e); }
-                }
-                else if (user.role === 'socio') { 
-                    mostrarSeccionSocio(); 
-                    ensureSocioStatusGuard(user);
-                }
-
-                // Función robusta para resetear el scroll al inicio (Ventana)
-                const forceScrollTop = () => {
-                    window.scrollTo({top: 0, left: 0, behavior: 'instant'});
-                    document.documentElement.scrollTop = 0;
-                    document.body.scrollTop = 0;
-                };
-
-                // Ejecutar múltiples veces para asegurar que el renderizado de Chrome no lo ignore
-                forceScrollTop();
-                setTimeout(forceScrollTop, 10);
-                setTimeout(forceScrollTop, 100);
-                setTimeout(forceScrollTop, 300);
-                setTimeout(forceScrollTop, 600);
-                setTimeout(forceScrollTop, 1000); // Un último intento para asegurar
-
-                cargarDatosPerfil();
-                initData();
-                ensureActivityListeners();
-                scheduleInactivity();
-            } catch (e) {
-                console.error("Error crítico en loginSuccess:", e);
-                // Si algo falla catastróficamente, notificamos al usuario
-                window.showToast("Error al cargar la interfaz. Recargue la página.", "error");
-            }
+            cargarDatosPerfil();
+            initData();
+            ensureActivityListeners();
+            scheduleInactivity();
         }
         function ensureSocioStatusGuard(user) {
             try { if (socioStatusUnsub) { socioStatusUnsub(); socioStatusUnsub = null; } } catch(_) {}
@@ -607,15 +571,9 @@
             if(id === 'sistema') renderSistema();
 
             // Resetear scroll al cambiar de sección (especialmente en móvil)
-            const forceScrollTop = () => {
-                window.scrollTo({top: 0, left: 0, behavior: 'instant'});
-                document.documentElement.scrollTop = 0;
-                document.body.scrollTop = 0;
-            };
-
-            forceScrollTop();
-            setTimeout(forceScrollTop, 50);
-            setTimeout(forceScrollTop, 150);
+            const main = document.querySelector('main');
+            if (main) main.scrollTop = 0;
+            window.scrollTo(0, 0);
 
             // Cerrar el menú lateral automáticamente en móviles si está abierto
             if (window.innerWidth < 768) {
@@ -643,7 +601,7 @@
                 if(currentUser.role === 'root' || (currentUser.role === 'admin' && currentUser.permisos?.padron)) {
                 document.getElementById('dash-socios').innerText = sociosData.length;
                 renderPadron();
-                try { updateCharts(); } catch(e) { console.error("Error en updateCharts (socios):", e); }
+                updateCharts();
             }
         });
         onValue(ref(db, 'cuotas'), (snap) => {
@@ -651,7 +609,7 @@
             cuotasData = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
             if(currentUser.role === 'root' || (currentUser.role === 'admin' && currentUser.permisos?.cuotas)) renderCuotas();
             if(currentUser.role === 'socio') renderSocioDashboard();
-            try { updateCharts(); } catch(e) { console.error("Error en updateCharts (cuotas):", e); }
+            updateCharts();
         });
             onValue(ref(db, 'asambleas'), (snap) => {
                 const data = snap.val();
