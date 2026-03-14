@@ -434,8 +434,8 @@
             const badge = document.getElementById('role-badge');
             badge.innerText = user.role === 'root' ? 'Admin Raíz' : (user.role === 'admin' ? 'Administrador' : 'Socio');
             badge.className = (user.role === 'root' || user.role === 'admin')
-                ? 'bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold'
-                : 'bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold';
+                ? 'bg-red-600 text-white px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold uppercase whitespace-nowrap'
+                : 'bg-blue-600 text-white px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold uppercase whitespace-nowrap';
 
             limpiarInterfaz();
 
