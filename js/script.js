@@ -433,8 +433,8 @@
             
             console.log("Login exitoso para:", user.usuario || user.email || '');
             
-            const roleText = user.role === 'root' ? 'Admin Raíz' : (user.role === 'admin' ? 'Administrador' : (user.role === 'vigilante' ? 'Vigilante' : 'Socio'));
-            const roleClass = (user.role === 'root' || user.role === 'admin') ? 'bg-red-600 text-white' : (user.role === 'vigilante' ? 'bg-slate-700 text-white' : 'bg-blue-600 text-white');
+            const roleText = user.role === 'root' ? 'Admin Raíz' : (user.role === 'admin' ? 'Administrador' : 'Socio');
+            const roleClass = (user.role === 'root' || user.role === 'admin') ? 'bg-red-600 text-white' : 'bg-blue-600 text-white';
             
             const badge = document.getElementById('role-badge');
             if (badge) {
@@ -447,9 +447,6 @@
             if (user.role === 'root' || user.role === 'admin') { 
                 mostrarSeccionAdmin(user); 
                 updateCharts();
-            }
-            else if (user.role === 'vigilante') {
-                mostrarSeccionVigilante();
             }
             else if (user.role === 'socio') { 
                 mostrarSeccionSocio(); 
@@ -477,12 +474,6 @@
             initData();
             ensureActivityListeners();
             scheduleInactivity();
-        }
-        function mostrarSeccionVigilante() {
-            document.querySelectorAll('.admin-nav').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.vigilante-nav').forEach(el => el.classList.remove('hidden'));
-            document.getElementById('nav-visitas').classList.add('hidden'); // Vigilante no genera sus propias visitas
-            showSection('control');
         }
         function ensureSocioStatusGuard(user) {
             try { if (socioStatusUnsub) { socioStatusUnsub(); socioStatusUnsub = null; } } catch(_) {}
@@ -565,9 +556,6 @@
             if (id === 'asambleas') allowed = can('asambleas');
             if (id === 'votaciones') allowed = can('votaciones');
             if (id === 'sistema') allowed = currentUser && currentUser.role === 'root';
-            if (id === 'control') allowed = currentUser && (currentUser.role === 'root' || currentUser.role === 'vigilante');
-            if (id === 'visitas') allowed = currentUser && currentUser.role === 'socio';
-            
             if (!allowed) {
                 document.getElementById('sec-dashboard').classList.remove('hidden-section');
                 window.scrollTo(0, 0);
@@ -586,8 +574,6 @@
             }
             if(id === 'caja') renderCaja();
             if(id === 'sistema') renderSistema();
-            if(id === 'visitas') renderVisitasSocio();
-            if(id === 'control') renderControlIngreso();
 
             // Resetear scroll al cambiar de sección (especialmente en móvil)
             const main = document.querySelector('main');
@@ -604,20 +590,11 @@
         };
 
         // --- DATA INIT ---
-        let visitasData = {};
         function initData() {
             onValue(ref(db, 'config'), (snap) => {
                 configData = snap.val() || {};
-                if(currentUser && currentUser.role === 'socio') renderSocioDashboard();
+                if(currentUser.role === 'socio') renderSocioDashboard();
             });
-            
-            // Suscripción a Visitas
-            onValue(ref(db, 'visitas'), (snap) => {
-                visitasData = snap.val() || {};
-                if(currentUser && currentUser.role === 'socio') renderVisitasSocio();
-                if(currentUser && (currentUser.role === 'root' || currentUser.role === 'vigilante')) renderControlIngreso();
-            });
-
             onValue(ref(db, 'admins'), (snap) => {
                 const data = snap.val();
                 adminsData = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
@@ -2172,11 +2149,11 @@
             }
         };
         window.modalNuevoAdmin = () => {
-            const body = `<div class="space-y-4"><div><label class="block text-xs font-bold uppercase mb-1">Nombre Completo</label><input id="ad-nom" type="text" class="w-full border p-2 rounded outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Usuario</label><input id="ad-usu" type="text" class="w-full border p-2 rounded outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Contraseña</label><input id="ad-pass" type="password" class="w-full border p-2 rounded outline-none"></div><div class="pt-2 border-t"><label class="block text-xs font-bold uppercase mb-2">Rol del Usuario</label><select id="ad-role" class="w-full border p-2 rounded outline-none text-sm mb-3" onchange="const c=document.getElementById('permisos-container'); if(c) c.style.display=this.value==='vigilante'?'none':'block';"><option value="admin">Administrador</option><option value="vigilante">Vigilante</option></select></div><div id="permisos-container" class="pt-2 border-t"><label class="block text-xs font-bold uppercase mb-2">Permisos de Acceso</label><div class="grid grid-cols-2 gap-2"><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="ad-p-padron"> Padrón de Socios</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="ad-p-cuotas"> Control de Cuotas</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="ad-p-caja"> Caja</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="ad-p-asambleas"> Asambleas</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="ad-p-votaciones"> Votaciones</label></div></div></div>`;
-            openModal("Crear Nuevo Usuario", body, async () => {
-                const usu = document.getElementById('ad-usu').value.trim(), pass = document.getElementById('ad-pass').value.trim(), role = document.getElementById('ad-role').value;
+            const body = `<div class="space-y-4"><div><label class="block text-xs font-bold uppercase mb-1">Nombre Completo</label><input id="ad-nom" type="text" class="w-full border p-2 rounded outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Usuario</label><input id="ad-usu" type="text" class="w-full border p-2 rounded outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Contraseña</label><input id="ad-pass" type="password" class="w-full border p-2 rounded outline-none"></div><div class="pt-2 border-t"><label class="block text-xs font-bold uppercase mb-2">Permisos de Acceso</label><div class="grid grid-cols-2 gap-2"><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="ad-p-padron"> Padrón de Socios</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="ad-p-cuotas"> Control de Cuotas</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="ad-p-caja"> Caja</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="ad-p-asambleas"> Asambleas</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="ad-p-votaciones"> Votaciones</label></div></div></div>`;
+            openModal("Crear Nuevo Administrador", body, async () => {
+                const usu = document.getElementById('ad-usu').value.trim(), pass = document.getElementById('ad-pass').value.trim();
                 if(!usu || !pass) return showToast("Usuario y contraseña obligatorios", "warning");
-                const permisos = role === 'vigilante' ? { padron: false, cuotas: false, caja: false, asambleas: false, votaciones: false, visitas: true } : { padron: document.getElementById('ad-p-padron').checked, cuotas: document.getElementById('ad-p-cuotas').checked, caja: document.getElementById('ad-p-caja').checked, asambleas: document.getElementById('ad-p-asambleas').checked, votaciones: document.getElementById('ad-p-votaciones').checked };
+                const permisos = { padron: document.getElementById('ad-p-padron').checked, cuotas: document.getElementById('ad-p-cuotas').checked, caja: document.getElementById('ad-p-caja').checked, asambleas: document.getElementById('ad-p-asambleas').checked, votaciones: document.getElementById('ad-p-votaciones').checked };
                 let tempApp, tempAuth;
                 try { tempApp = initializeApp(firebaseConfigPrincipal, 'adminCreator'); } catch(_) { tempApp = initializeApp(firebaseConfigPrincipal, 'adminCreator2'); }
                 tempAuth = getAuth(tempApp);
@@ -2184,31 +2161,30 @@
                     const email = `${usu.toLowerCase()}@urbgloria.com`;
                     const cred = await createUserWithEmailAndPassword(tempAuth, email, pass);
                     const uid = cred && cred.user ? cred.user.uid : null;
-                    if (!uid) throw new Error("No se obtuvo UID del nuevo usuario");
+                    if (!uid) throw new Error("No se obtuvo UID del nuevo administrador");
+                    // Crear usuario en Auth de Caja usando APP temporal para no afectar la sesión actual
                     let cajaUid = null;
-                    if (role === 'admin') {
-                        let tempAppCaja, tempAuthCaja;
-                        try { tempAppCaja = initializeApp(firebaseConfigCaja, 'adminCajaCreator'); } catch(_) { tempAppCaja = initializeApp(firebaseConfigCaja, 'adminCajaCreator2'); }
-                        tempAuthCaja = getAuth(tempAppCaja);
+                    let tempAppCaja, tempAuthCaja;
+                    try { tempAppCaja = initializeApp(firebaseConfigCaja, 'adminCajaCreator'); } catch(_) { tempAppCaja = initializeApp(firebaseConfigCaja, 'adminCajaCreator2'); }
+                    tempAuthCaja = getAuth(tempAppCaja);
+                    try {
+                        const credCaja = await createUserWithEmailAndPassword(tempAuthCaja, email, pass);
+                        cajaUid = credCaja && credCaja.user ? credCaja.user.uid : null;
+                    } catch(e) {
                         try {
-                            const credCaja = await createUserWithEmailAndPassword(tempAuthCaja, email, pass);
-                            cajaUid = credCaja && credCaja.user ? credCaja.user.uid : null;
-                        } catch(e) {
-                            try {
-                                await signInWithEmailAndPassword(tempAuthCaja, email, pass);
-                                const u = tempAuthCaja.currentUser;
-                                cajaUid = u && u.uid ? u.uid : null;
-                            } catch(_) {}
-                        } finally {
-                            try { await signOut(tempAuthCaja); } catch(_) {}
-                        }
+                            await signInWithEmailAndPassword(tempAuthCaja, email, pass);
+                            const u = tempAuthCaja.currentUser;
+                            cajaUid = u && u.uid ? u.uid : null;
+                        } catch(_) {}
+                    } finally {
+                        try { await signOut(tempAuthCaja); } catch(_) {}
                     }
-                    await set(ref(db, `admins/${uid}`), { nombre: document.getElementById('ad-nom').value.trim(), usuario: usu.toLowerCase(), password: pass, permisos, role: role, uid, ...(cajaUid ? { cajaUid } : {}) });
+                    await set(ref(db, `admins/${uid}`), { nombre: document.getElementById('ad-nom').value.trim(), usuario: usu.toLowerCase(), password: pass, permisos, role: 'admin', uid, ...(cajaUid ? { cajaUid } : {}) });
                     if (cajaUid) { try { await set(ref(dbCaja, `aclAdmins/${cajaUid}`), true); } catch(_) {} }
-                    showToast(`${role === 'vigilante' ? 'Vigilante' : 'Administrador'} creado correctamente`, "success");
+                    showToast("Administrador creado correctamente", "success");
                     closeModal();
                 } catch(e) {
-                    showToast((e && e.code) ? `Error: ${e.code}` : 'No se pudo crear el usuario', "error");
+                    showToast((e && e.code) ? `Error: ${e.code}` : 'No se pudo crear el administrador', "error");
                 } finally {
                     try { await signOut(tempAuth); } catch(_) {}
                 }
@@ -3046,175 +3022,5 @@
                 input.type = 'password';
                 if (eye) { eye.classList.remove('fa-eye-slash'); eye.classList.add('fa-eye'); }
             }
-        };
-
-        // --- VISITAS ---
-        window.modalNuevaVisita = () => {
-            const body = `
-            <div class="space-y-4">
-                <div><label class="block text-xs font-bold uppercase mb-1">Nombre de la Visita</label><input id="vis-nom" type="text" placeholder="Ej: Juan Pérez" class="w-full border p-2 rounded outline-none"></div>
-                <div><label class="block text-xs font-bold uppercase mb-1">DNI (Opcional)</label><input id="vis-dni" type="text" placeholder="DNI" class="w-full border p-2 rounded outline-none"></div>
-                <div>
-                    <label class="block text-xs font-bold uppercase mb-1">Duración del pase</label>
-                    <select id="vis-dur" class="w-full border p-2 rounded outline-none">
-                        <option value="4">4 Horas</option>
-                        <option value="12">12 Horas</option>
-                        <option value="24" selected>24 Horas</option>
-                        <option value="48">48 Horas</option>
-                    </select>
-                </div>
-            </div>`;
-            
-            openModal("Generar Invitación", body, async () => {
-                const btn = document.getElementById('modal-action-btn');
-                const nombre = document.getElementById('vis-nom').value.trim();
-                const dni = document.getElementById('vis-dni').value.trim();
-                const horas = parseInt(document.getElementById('vis-dur').value);
-                
-                if(!nombre) return showToast("El nombre es obligatorio", "warning");
-                
-                if (btn) { btn.disabled = true; btn.innerText = "Generando..."; }
-
-                try {
-                    const expira = Date.now() + (horas * 60 * 60 * 1000);
-                    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-                    const newVisitaRef = push(ref(db, 'visitas'));
-                    
-                    const nuevaVisita = {
-                        id: newVisitaRef.key,
-                        nombre,
-                        dni,
-                        socioId: currentUser.id,
-                        socioNombre: currentUser.nombre || `${currentUser.nombres} ${currentUser.apellidos}`,
-                        lote: currentUser.lote || '-',
-                        codigo: code,
-                        expira,
-                        creado: Date.now(),
-                        estado: 'activo'
-                    };
-                    
-                    await set(newVisitaRef, nuevaVisita);
-                    showToast("Invitación generada correctamente", "success");
-                    closeModal();
-                } catch(e) {
-                    console.error("Error al guardar visita:", e);
-                    showToast("Error de permisos o conexión al guardar", "error");
-                } finally {
-                    if (btn) { btn.disabled = false; btn.innerText = "Confirmar"; }
-                }
-            });
-        };
-
-        window.renderVisitasSocio = () => {
-            const list = document.getElementById('visitas-list');
-            if(!list) return;
-            list.innerHTML = '';
-            
-            const misVisitas = Object.values(visitasData || {}).filter(v => v.socioId === currentUser.id);
-            misVisitas.sort((a,b) => b.creado - a.creado);
-            
-            if(misVisitas.length === 0) {
-                list.innerHTML = '<p class="col-span-full text-center py-10 text-slate-400">No has generado invitaciones aún.</p>';
-                return;
-            }
-            
-            misVisitas.forEach(v => {
-                const esExpirado = Date.now() > v.expira;
-                const div = document.createElement('div');
-                div.className = `bg-white p-4 rounded-xl shadow-sm border ${esExpirado ? 'opacity-60 border-slate-200' : 'border-indigo-100'}`;
-                
-                const expDate = new Date(v.expira).toLocaleString();
-                
-                div.innerHTML = `
-                    <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <h4 class="font-bold text-slate-800">${v.nombre}</h4>
-                            <p class="text-[10px] text-slate-500">DNI: ${v.dni || '-'}</p>
-                        </div>
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${esExpirado ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">
-                            ${esExpirado ? 'Expirado' : 'Activo'}
-                        </span>
-                    </div>
-                    <div class="bg-slate-50 p-3 rounded-lg text-center mb-3">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Código de Ingreso</p>
-                        <p class="text-2xl font-black tracking-widest text-indigo-600">${v.codigo}</p>
-                    </div>
-                    <p class="text-[10px] text-slate-400 mb-3"><i class="fas fa-clock mr-1"></i> Expira: ${expDate}</p>
-                    <div class="flex gap-2">
-                        <button onclick="compartirVisita('${v.codigo}', '${v.nombre}')" class="flex-1 bg-indigo-50 text-indigo-600 py-2 rounded-lg text-xs font-bold hover:bg-indigo-100 transition">
-                            <i class="fas fa-share-alt mr-1"></i> Compartir
-                        </button>
-                        <button onclick="eliminarVisita('${v.id}')" class="px-3 bg-red-50 text-red-500 py-2 rounded-lg text-xs hover:bg-red-100 transition">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        };
-
-        window.compartirVisita = (codigo, nombre) => {
-            const msg = `Hola ${nombre}, esta es tu invitación para ingresar a la Cooperativa Gloria N° 4.\n\nCódigo de ingreso: *${codigo}*\nPresenta este código en la garita de control.`;
-            const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-            window.open(url, '_blank');
-        };
-
-        window.eliminarVisita = async (id) => {
-            if(!confirm("¿Deseas eliminar esta invitación?")) return;
-            await remove(ref(db, `visitas/${id}`));
-            showToast("Invitación eliminada", "info");
-        };
-
-        window.renderControlIngreso = () => {
-            const list = document.getElementById('control-visitas-list');
-            const search = (document.getElementById('control-search')?.value || '').toLowerCase();
-            if(!list) return;
-            list.innerHTML = '';
-            
-            let todasVisitas = Object.values(visitasData || {});
-            todasVisitas = todasVisitas.filter(v => {
-                const matchesSearch = v.nombre.toLowerCase().includes(search) || 
-                                     v.socioNombre.toLowerCase().includes(search) || 
-                                     v.codigo.toLowerCase().includes(search);
-                const noExpirado = Date.now() < v.expira;
-                return matchesSearch && noExpirado;
-            });
-            
-            todasVisitas.sort((a,b) => b.creado - a.creado);
-            
-            if(todasVisitas.length === 0) {
-                list.innerHTML = '<p class="col-span-full text-center py-10 text-slate-400">No hay visitas activas que coincidan con la búsqueda.</p>';
-                return;
-            }
-            
-            todasVisitas.forEach(v => {
-                const div = document.createElement('div');
-                div.className = "bg-white p-4 rounded-xl shadow-sm border border-emerald-100 border-l-4 border-l-emerald-500";
-                
-                div.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-bold text-slate-800">${v.nombre}</h4>
-                        <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold uppercase">Autorizado</span>
-                    </div>
-                    <div class="space-y-1 mb-3">
-                        <p class="text-xs text-slate-600"><span class="font-bold">Socio:</span> ${v.socioNombre}</p>
-                        <p class="text-xs text-slate-600"><span class="font-bold">Ubicación:</span> Lote ${v.lote}</p>
-                        <p class="text-xs text-slate-600"><span class="font-bold">Código:</span> <span class="bg-slate-100 px-1.5 py-0.5 rounded font-mono font-bold text-indigo-600">${v.codigo}</span></p>
-                    </div>
-                    <div class="pt-2 border-t border-slate-50 flex justify-between items-center">
-                        <p class="text-[10px] text-slate-400">Expira en: ${Math.round((v.expira - Date.now()) / (1000 * 60 * 60))} horas</p>
-                        <button onclick="marcarIngreso('${v.id}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-700 transition">
-                            <i class="fas fa-check mr-1"></i> Marcar Ingreso
-                        </button>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        };
-
-        window.marcarIngreso = async (id) => {
-            if(!confirm("¿Confirmar ingreso de esta visita?")) return;
-            await remove(ref(db, `visitas/${id}`));
-            showToast("Ingreso registrado correctamente", "success");
         };
 
