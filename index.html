@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="css/style.css?v=1.0">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
-<body class="bg-gray-100 min-h-screen overflow-hidden">
+<body class="bg-gray-100 min-h-screen">
 
     <div id="toast-container"></div>
 
@@ -22,27 +22,23 @@
     <div id="login-screen" class="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center z-50 overflow-y-auto">
         <div class="login-modern w-full max-w-md p-8 rounded-[20px] shadow-2xl border border-white/30 bg-white/60 backdrop-blur-md">
             <div class="flex flex-col items-center mb-4">
-                <svg width="64" height="64" viewBox="0 0 64 64" fill="none" class="mb-2">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
                     <path d="M8 36L24 22L40 36V56H8V36Z" fill="#10B981"/>
                     <path d="M28 28L40 18L56 30V56H40V36L28 28Z" fill="#0ea5e9" opacity="0.85"/>
                     <circle cx="50" cy="14" r="6" fill="#10B981" opacity="0.9"/>
                 </svg>
-                <h1 class="text-xl font-semibold text-center text-slate-800">Cooperativa Gloria N°4</h1>
+                <h1 class="text-2xl font-bold text-[#0f3f22] mt-2">Cooperativa Gloria N°4</h1>
             </div>
             <div class="space-y-4">
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
-                        <i class="fa-solid fa-user"></i>
-                    </span>
-                    <input type="text" id="login-user" placeholder="Usuario" class="w-full pl-10 pr-3 py-3 rounded-xl bg-gray-100 border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition" />
+                    <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="login-user" placeholder="Usuario" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white/80">
                 </div>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
-                        <i class="fa-solid fa-lock"></i>
-                    </span>
-                    <input type="password" id="login-pass" placeholder="Contraseña" class="w-full pl-10 pr-12 py-3 rounded-xl bg-gray-100 border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition" />
-                    <button type="button" aria-label="Mostrar u ocultar contraseña" onclick="toggleLoginPass(this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-700 transition">
-                        <i class="fa-solid fa-eye"></i>
+                    <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="password" id="login-pass" placeholder="Contraseña" class="w-full pl-12 pr-12 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white/80">
+                    <button onclick="toggleLoginPass()" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <i id="login-pass-icon" class="fas fa-eye"></i>
                     </button>
                 </div>
                 <button onclick="handleLogin()" class="w-full bg-[#14532d] hover:bg-[#0f3f22] text-white py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-transform duration-150 hover:-translate-y-0.5">Ingresar</button>
@@ -51,30 +47,30 @@
         </div>
         <!-- Versión del Sistema en Login (Fuera del recuadro) -->
         <div class="mt-4 text-center">
-            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest opacity-60">Sistema Cooperativa Gloria N°4 v.1.0</p>
-            <p class="text-[9px] text-slate-500 mt-0.5 opacity-60">Versión 1.0 (Estable)</p>
+            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest opacity-60">Sistema Cooperativa Gloria N°4 v.1.1</p>
+            <p class="text-[9px] text-slate-500 mt-0.5 opacity-60">Versión 1.1 (Estable)</p>
         </div>
     </div>
 
     <!-- Main App -->
-    <div id="app-content" class="hidden flex flex-col h-screen max-h-screen overflow-hidden">
+    <div id="app-content" class="hidden flex flex-col min-h-screen bg-gray-50">
         <!-- Header -->
-        <header class="sticky top-0 bg-white/80 backdrop-blur-md border-b px-4 py-3 flex justify-between items-center no-print z-30 shadow-sm">
-            <div class="flex items-center gap-2 md:gap-4 overflow-hidden shrink-0">
-                <h2 class="text-lg md:text-xl font-bold text-[#0f3f22] truncate max-w-[120px] md:max-w-none">Gloria N°4</h2>
+        <header class="bg-white border-b px-4 py-3 flex justify-between items-center no-print z-40 shadow-sm sticky top-0">
+            <div class="flex items-center gap-2 md:gap-4 overflow-hidden">
+                <h2 class="text-lg md:text-xl font-bold text-[#0f3f22] truncate">Cooperativa Gloria N°4</h2>
                 <span id="role-badge" class="px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold uppercase shrink-0"></span>
                 <!-- Botón hamburguesa solo en móvil -->
                 <button
                     type="button"
                     onclick="toggleSidebar()"
-                    class="md:hidden inline-flex items-center justify-center p-2 rounded-md hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 z-30 shrink-0"
+                    class="md:hidden inline-flex items-center justify-center p-2 rounded-md hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
                     aria-label="Abrir menú de navegación"
                 >
                     <i class="fas fa-bars text-[#0f3f22]"></i>
                 </button>
             </div>
-            <div class="flex items-center gap-2 md:gap-4 bg-[#f1f3f5] px-2 py-1.5 md:px-3 md:py-2 rounded-[30px] shadow-sm border border-gray-200 ml-auto shrink-0">
-                <span id="user-display" class="font-medium text-[#0f3f22] text-[10px] md:text-sm truncate max-w-[80px] md:max-w-none"></span>
+            <div class="flex items-center gap-2 md:gap-4 bg-[#f1f3f5] px-2 py-1 md:px-3 md:py-2 rounded-[30px] shadow-sm border border-gray-200">
+                <span id="user-display" class="font-medium text-[#0f3f22] text-[10px] md:text-sm truncate max-w-[100px] md:max-w-none"></span>
                 <button
                     onclick="logout()"
                     class="text-red-600 hover:text-red-700 font-bold text-[10px] md:text-sm uppercase px-2 py-1 md:px-4 md:py-2 rounded-[20px] bg-white border border-red-200"
@@ -84,9 +80,9 @@
             </div>
         </header>
 
-        <div class="flex flex-1 overflow-hidden flex-col md:flex-row">
+        <div class="flex flex-1 flex-col md:flex-row">
             <!-- Sidebar -->
-            <nav id="sidebar" class="hidden md:block w-full md:w-64 bg-slate-800 text-white p-4 space-y-2 no-print overflow-y-auto md:flex-shrink-0">
+            <nav id="sidebar" class="hidden md:block w-full md:w-64 bg-slate-800 text-white p-4 space-y-2 no-print md:sticky md:top-[65px] md:h-[calc(100vh-65px)] overflow-y-auto">
                 <div class="flex items-center justify-center pb-4 mb-2 border-b border-white/10">
                     <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
                         <path d="M8 36L24 22L40 36V56H8V36Z" fill="#10B981"/>
@@ -122,13 +118,13 @@
 
                 <!-- Versión del Sistema -->
                 <div class="pt-6 mt-6 border-t border-white/10 text-center">
-                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest opacity-60">Sistema Cooperativa Gloria N°4 v.1.0</p>
-                    <p class="text-[9px] text-slate-600 mt-1 opacity-60">Versión 1.0 (Estable)</p>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest opacity-60">Sistema Cooperativa Gloria N°4 v.1.1</p>
+                    <p class="text-[9px] text-slate-600 mt-1 opacity-60">Versión 1.1 (Estable)</p>
                 </div>
             </nav>
 
             <!-- Content Area -->
-            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50">
+            <main class="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">
                 
                 <!-- Dashboard -->
                 <section id="sec-dashboard" class="hidden-section space-y-6">
