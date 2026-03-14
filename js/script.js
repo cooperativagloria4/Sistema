@@ -1136,10 +1136,10 @@
                 vContainer.innerHTML = '<p class="text-xs text-indigo-700 italic">No hay votaciones activas.</p>';
             } else {
                 votacionesData.forEach(v => {
-                    const votos = v.votos || {};
-                    const yaVoto = votos[currentUser.id];
-                    let uiVoto = '';
-                    if (yaVoto) uiVoto = `<div class="w-full text-center py-2 bg-indigo-100 text-indigo-800 font-bold rounded-lg border border-indigo-200 shadow-inner"><i class="fas fa-check-circle"></i> Voto Registrado (${yaVoto})</div>`;
+                const votos = v.votos || {};
+                const yaVoto = votos[currentUser.id];
+                let uiVoto = '';
+                if (yaVoto) uiVoto = `<div class="w-full text-center py-2 bg-indigo-100 text-indigo-800 font-bold rounded-lg border border-indigo-200 shadow-inner"><i class="fas fa-check-circle"></i> Voto Registrado (${yaVoto})</div>`;
                     else if (v.cerrada) uiVoto = `<div class="w-full text-center py-2 bg-red-100 text-red-700 font-bold rounded-lg border border-red-200 shadow-inner"><i class="fas fa-lock"></i> Votación cerrada</div>`;
                     else if ((configData.votaciones && configData.votaciones.restringirMorosos) && isMoroso) uiVoto = `<div class="space-y-2"><div class="flex gap-2"><button disabled class="flex-1 py-1.5 rounded border border-indigo-300 text-indigo-700 text-sm font-bold bg-white">SÍ</button><button disabled class="flex-1 py-1.5 rounded border border-rose-300 text-rose-700 text-sm font-bold bg-white">NO</button></div><div class="w-full text-center py-2 bg-red-100 text-red-700 font-bold rounded-lg border border-red-200 text-xs"><i class="fas fa-ban"></i> Voto restringido por cuotas pendientes. Regulariza tu situación para participar.</div></div>`;
                     else uiVoto = `<div class="flex gap-2"><button onclick="votar('${v.id}', 'SI')" class="flex-1 py-1.5 rounded border border-indigo-300 text-indigo-700 text-sm font-bold transition hover:bg-indigo-600 hover:text-white">SÍ</button><button onclick="votar('${v.id}', 'NO')" class="flex-1 py-1.5 rounded border border-rose-300 text-rose-700 text-sm font-bold transition hover:bg-rose-600 hover:text-white">NO</button></div>`;
@@ -1912,20 +1912,50 @@
                 container.appendChild(div);
             });
         }
-        window.votar = (id, opcion) => {
-            if(currentUser.role !== 'socio') return;
+        window.votar = async (id, opcion) => {
+            if(!currentUser || currentUser.role !== 'socio') return;
+            
+            const voterId = currentUser.id;
+            console.log(`[Votación] Socio ${voterId} intentando votar '${opcion}' en ${id}`);
+            
             const restr = configData.votaciones && configData.votaciones.restringirMorosos;
             if (restr) {
-                const tienePend = cuotasData.some(c => c.socioId === currentUser.id && (c.estado ? c.estado === 'PENDIENTE' : true));
+                // Verificamos si el socio tiene deudas pendientes
+                const tienePend = cuotasData.some(c => c.socioId === voterId && (c.estado ? c.estado === 'PENDIENTE' : true));
                 if (tienePend) {
-                    alert('Voto restringido por cuotas pendientes. Regulariza tu situación para participar.');
+                    showToast("Voto restringido por cuotas pendientes. Regulariza tu situación para participar.", "warning");
                     return;
                 }
             }
+
             const v = votacionesData.find(x => x.id === id);
-            if (v && v.cerrada) { showToast("Esta votación está cerrada.", "warning"); return; }
-            if(v && v.votos && v.votos[currentUser.id]) { showToast("Ya registraste tu voto.", "info"); return; }
-            update(ref(db, `votaciones/${id}/votos`), { [currentUser.id]: opcion });
+            if (!v) {
+                showToast("Votación no encontrada.", "error");
+                return;
+            }
+            
+            if (v.cerrada) { 
+                showToast("Esta votación está cerrada.", "warning"); 
+                return; 
+            }
+            
+            if(v.votos && v.votos[voterId]) { 
+                showToast("Ya registraste tu voto.", "info"); 
+                return; 
+            }
+
+            try {
+                // Usamos update para añadir el voto del socio sin borrar los demás
+                // El nodo 'votos' es un objeto { socioId: 'SI'/'NO' }
+                const votosRef = ref(db, `votaciones/${id}/votos`);
+                await update(votosRef, { [voterId]: opcion });
+                
+                showToast("¡Voto registrado con éxito!", "success");
+                console.log(`[Votación] Voto '${opcion}' registrado con éxito para el socio ${voterId}`);
+            } catch (error) {
+                console.error("[Votación] Error al registrar el voto:", error);
+                showToast("Error al registrar el voto. Inténtelo de nuevo.", "error");
+            }
         };
         window.closeVotacion = async (id) => { await update(ref(db, `votaciones/${id}`), { cerrada: true }); showToast("Votación cerrada", "info"); };
         window.openVotacion = async (id) => { await update(ref(db, `votaciones/${id}`), { cerrada: false }); showToast("Votación abierta", "success"); };
