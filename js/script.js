@@ -2383,14 +2383,11 @@
             });
 
             // --- LÍNEA DE FIRMA (CENTRO INFERIOR) ---
-            y += 20; // Reducido significativamente el espacio (aprox 5 líneas menos que el anterior y+40)
+            y += 10; // Reducido 2 líneas más (de 20 a 10)
             doc.setDrawColor(0, 0, 0);
             doc.line(pageWidth / 2 - 100, y, pageWidth / 2 + 100, y);
-            y += 15;
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text('FIRMA', pageWidth / 2, y, { align: 'center' });
-
+            // Se eliminó el texto "FIRMA" debajo de la línea
+            
             // Pie de página (más cerca del final del contenido)
             y += 30;
             const now = new Date();
@@ -2400,6 +2397,17 @@
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(150, 150, 150);
             doc.text(`Documento generado el ${fechaGen}`, pageWidth / 2, y, { align: 'center' });
+
+            // --- LÍNEA DE CORTE ---
+            y += 15;
+            doc.setDrawColor(180, 180, 180);
+            doc.setLineDash([3, 3], 0); // Línea punteada
+            doc.line(0, y, pageWidth, y);
+            
+            // Icono de tijeras (representado con caracteres si no hay imagen, o una etiqueta)
+            doc.setFontSize(10);
+            doc.text('✂---------------------------------------------------------------------------------------------------------------------------------', pageWidth / 2, y + 3, { align: 'center' });
+            doc.setLineDash([], 0); // Resetear a línea sólida para futuros usos
 
             doc.save(`Recibo_${data.numeroRecibo}.pdf`);
         };
