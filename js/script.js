@@ -2525,8 +2525,27 @@
             doc.setTextColor(100, 100, 100);
             doc.text(`HASH DE VALIDACIÓN: ${validHash}`, margin, y);
 
+            // --- CÓDIGO QR DE VALIDACIÓN ---
+            try {
+                const qrData = `COOPERATIVA GLORIA N° 4\nRecibo: ${data.numeroRecibo}\nSocio: ${data.nombreSocio}\nMonto: S/ ${data.monto}\nFecha: ${fechaALetras(data.fechaPago)}\nID: ${data.id || 'N/A'}`;
+                const qr = new QRious({
+                    value: qrData,
+                    size: 100,
+                    level: 'M'
+                });
+                const qrX = pageWidth - margin - 80;
+                const qrY = y - 10;
+                doc.addImage(qr.toDataURL(), 'PNG', qrX, qrY, 80, 80);
+                
+                doc.setFontSize(6);
+                doc.setFont('helvetica', 'normal');
+                doc.text('ESCANEAME PARA VALIDAR', qrX + 40, qrY + 88, { align: 'center' });
+            } catch(e) {
+                console.error("Error generando QR:", e);
+            }
+
             // --- LÍNEA DE FIRMA (CENTRO INFERIOR) ---
-            y += 20;
+            y += 40; // Aumentado para dar espacio al QR si es necesario
             doc.setDrawColor(0, 0, 0);
             doc.line(pageWidth / 2 - 100, y, pageWidth / 2 + 100, y);
             
