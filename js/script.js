@@ -1844,7 +1844,7 @@
                     <div><h4 class="font-bold text-lg text-slate-800">${a.asunto}</h4><p class="text-sm text-gray-500"><i class="far fa-calendar-alt"></i> ${a.fecha} | ${a.hora} | <i class="fas fa-map-marker-alt"></i> ${a.lugar || '-'}</p></div>
                     <div class="flex gap-2">
                         <button onclick="modalTomarAsistencia('${a.id}')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase hover:bg-indigo-700">Asistencia</button>
-                        <button onclick="imprimirActa('${a.id}')" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase hover:bg-gray-900"><i class="fas fa-print"></i> Acta</button>
+                        <button onclick="imprimirActa('${a.id}')" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase hover:bg-gray-900"><i class="fas fa-file-pdf"></i> Acta</button>
                     </div>
                 `;
                 container.appendChild(div);
