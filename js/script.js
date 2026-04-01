@@ -38,14 +38,16 @@
         const authCaja = getAuth(appCaja);
         try { setPersistence(authCaja, inMemoryPersistence); } catch(_) {}
 
-        // --- FECHA DEL SISTEMA (HELPER) ---
-        window.getSystemDate = () => {
-            if (configData && configData.sistema && configData.sistema.useCustomDate && configData.sistema.customDate) {
-                const [y, m, d] = configData.sistema.customDate.split('-').map(Number);
-                const [h, min] = (configData.sistema.customTime || '00:00').split(':').map(Number);
-                return new Date(y, m - 1, d, h, min, 0);
-            }
-            return new Date();
+        // --- HELPERS DE FECHA (PARA EVITAR PROBLEMAS DE ZONA HORARIA CON toISOString) ---
+        window.getLocalIsoDate = () => {
+            const d = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        };
+        window.getLocalIsoMonth = () => {
+            const d = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
         };
 
         let currentUser = null;
@@ -113,8 +115,8 @@
             }
         };
 
-        document.getElementById('cuotas-filter-month').value = window.getSystemDate().toISOString().substring(0, 7);
-        document.getElementById('caja-filter-month').value = window.getSystemDate().toISOString().substring(0, 7);
+        document.getElementById('cuotas-filter-month').value = window.getLocalIsoMonth();
+        document.getElementById('caja-filter-month').value = window.getLocalIsoMonth();
 
         // --- AUTH ---
         async function findProfileAfterAuth(fbUser, loginUsuario) {
@@ -603,13 +605,6 @@
         function initData() {
             onValue(ref(db, 'config'), (snap) => {
                 configData = snap.val() || {};
-                // Actualizar filtros de fecha si están en el valor por defecto
-                const currentMonth = window.getSystemDate().toISOString().substring(0, 7);
-                const cuotasFilter = document.getElementById('cuotas-filter-month');
-                const cajaFilter = document.getElementById('caja-filter-month');
-                if (cuotasFilter) cuotasFilter.value = currentMonth;
-                if (cajaFilter) cajaFilter.value = currentMonth;
-
                 if(currentUser.role === 'socio') renderSocioDashboard();
             });
             onValue(ref(db, 'admins'), (snap) => {
@@ -638,7 +633,7 @@
                 asambleasData = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
                 if(currentUser.role === 'root' || (currentUser.role === 'admin' && currentUser.permisos?.asambleas)) {
                     renderAsambleas();
-                    const now = window.getSystemDate();
+                    const now = new Date();
                     const futuras = asambleasData
                         .map(a => {
                             const [yy, mm, dd] = String(a.fecha || '').split('-').map(n => parseInt(n, 10));
@@ -940,7 +935,7 @@
             ingresosOtros.sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
             egresosDetalle.sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
             const saldoFinal = totalIngresos - totalEgresos;
-            const now = window.getSystemDate();
+            const now = new Date();
             const pad = (n) => String(n).padStart(2, '0');
             const fechaGen = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}, ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
             const partes = String(mesFiltro || '').split('-');
@@ -1157,7 +1152,7 @@
             });
             document.getElementById('socio-historial').innerHTML = (historialHTML !== '') ? historialHTML : '<p class="text-xs text-gray-500 italic">No tienes cuotas pagadas.</p>';
 
-            const now = window.getSystemDate();
+            const now = new Date();
             const futuras = asambleasData
                 .map(a => {
                     const [yy, mm, dd] = String(a.fecha || '').split('-').map(n => parseInt(n, 10));
@@ -1550,12 +1545,12 @@
             }
             const body = `<div class="space-y-3">
                 <div><label class="block text-xs font-bold uppercase mb-1">Número de Recibo Físico</label><input id="recibo-num" type="text" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-emerald-500" value="${sugerido}" placeholder="Ingrese el número de recibo"></div>
-                <div><label class="block text-xs font-bold uppercase mb-1">Fecha de pago</label><input id="recibo-fecha" type="date" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-emerald-500" value="${window.getSystemDate().toISOString().split('T')[0]}"></div>
+                <div><label class="block text-xs font-bold uppercase mb-1">Fecha de pago</label><input id="recibo-fecha" type="date" class="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-emerald-500" value="${window.getLocalIsoDate()}"></div>
             </div>`;
             openModal("Confirmar Pago de Cuota", body, async () => {
                 const numeroRecibo = (document.getElementById('recibo-num').value || '').trim();
                 if (!numeroRecibo) { showToast("Debe ingresar el número de recibo.", "warning"); return; }
-                const fechaPago = (document.getElementById('recibo-fecha').value || window.getSystemDate().toISOString().split('T')[0]);
+                const fechaPago = (document.getElementById('recibo-fecha').value || window.getLocalIsoDate());
                 try {
                     const movSnap = await get(ref(dbCaja, 'movimientos'));
                     if (movSnap.exists()) {
@@ -1578,7 +1573,7 @@
                         cuotaOriginal: {
                             socioId: cuota.socioId,
                             concepto: cuota.concepto,
-                            fechaEmision: cuota.fecha || window.getSystemDate().toISOString().split('T')[0]
+                            fechaEmision: cuota.fecha || window.getLocalIsoDate()
                         }
                     });
                     
@@ -1640,13 +1635,13 @@
                 return A.numero - B.numero;
             });
             const optionsSocios = activosOrdenados.map(s => `<option value="${s.id}">${s.apellidos}, ${s.nombres}</option>`).join('');
-            const body = `<div class="space-y-4"><div><label class="block text-xs font-bold uppercase mb-1">Concepto</label><input id="q-concepto" type="text" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Monto (S/)</label><input id="q-monto" type="number" step="0.01" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Fecha de emisión</label><input id="q-fecha" type="date" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none" value="${window.getSystemDate().toISOString().split('T')[0]}"></div><div><label class="block text-xs font-bold uppercase mb-1">Destinatario</label><select id="q-dest" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"><option value="todos">Todos los Socios Activos</option>${optionsSocios}</select></div></div>`;
+            const body = `<div class="space-y-4"><div><label class="block text-xs font-bold uppercase mb-1">Concepto</label><input id="q-concepto" type="text" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Monto (S/)</label><input id="q-monto" type="number" step="0.01" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"></div><div><label class="block text-xs font-bold uppercase mb-1">Fecha de emisión</label><input id="q-fecha" type="date" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none" value="${window.getLocalIsoDate()}"></div><div><label class="block text-xs font-bold uppercase mb-1">Destinatario</label><select id="q-dest" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"><option value="todos">Todos los Socios Activos</option>${optionsSocios}</select></div></div>`;
             openModal("Generar Nueva Cuota", body, async () => {
                 const concepto = document.getElementById('q-concepto').value.trim();
                 const monto = document.getElementById('q-monto').value.trim();
                 const dest = document.getElementById('q-dest').value;
                 const fechaSel = (document.getElementById('q-fecha').value || '').trim();
-                const fecha = fechaSel || window.getSystemDate().toISOString().split('T')[0];
+                const fecha = fechaSel || window.getLocalIsoDate();
 
                 if(!concepto) return showToast("El concepto de la cuota es obligatorio", "warning");
                 if(!monto || isNaN(monto) || parseFloat(monto) <= 0) return showToast("Ingresa un monto válido mayor a 0", "warning");
@@ -1666,7 +1661,7 @@
 
         // --- CAJA ---
         window.renderCaja = async () => {
-            const filterMonth = document.getElementById('caja-filter-month').value || window.getSystemDate().toISOString().substring(0, 7);
+            const filterMonth = document.getElementById('caja-filter-month').value || window.getLocalIsoMonth();
             const filtrados = allCajaMovs.filter(m => m.fecha && m.fecha.startsWith(filterMonth));
             const tbody = document.getElementById('tbody-caja');
             tbody.innerHTML = '';
@@ -1765,7 +1760,7 @@
                     <div><label class="block text-xs font-bold uppercase mb-1">Monto (S/)</label><input id="c-monto" type="number" step="0.01" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div>
                     <div><label class="block text-xs font-bold uppercase mb-1">Tipo</label><select id="c-tipo" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"><option value="ingreso">Ingreso (+)</option><option value="egreso">Egreso (-)</option></select></div>
                 </div>
-                <div><label class="block text-xs font-bold uppercase mb-1">Fecha</label><input id="c-fecha" type="date" value="${window.getSystemDate().toISOString().split('T')[0]}" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div>
+                <div><label class="block text-xs font-bold uppercase mb-1">Fecha</label><input id="c-fecha" type="date" value="${window.getLocalIsoDate()}" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none"></div>
             </div>`;
             openModal("Registrar Movimiento de Caja", body, async () => {
                 const desc = document.getElementById('c-desc').value.trim();
@@ -1801,7 +1796,7 @@
             });
         };
         window.modalPublicarInforme = () => {
-            const mesActual = document.getElementById('caja-filter-month').value || window.getSystemDate().toISOString().substring(0, 7);
+            const mesActual = document.getElementById('caja-filter-month').value || window.getLocalIsoMonth();
             const st = configData.informeCaja || {};
             const publicadoInfo = st.publicadoEn ? `<div class="text-xs text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 rounded p-2">Publicado el: ${st.publicadoEn}</div>` : `<div class="text-xs text-amber-700 font-bold bg-amber-50 border border-amber-200 rounded p-2">Aún no publicado</div>`;
             const body = `<div class="space-y-4">
@@ -1819,7 +1814,7 @@
             </div>`;
             openModal("Publicar Informe Mensual de Caja", body, async () => {
                 const pad = (n) => String(n).padStart(2, '0');
-                const now = window.getSystemDate();
+                const now = new Date();
                 const publicadoEn = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} a las ${pad(now.getHours())}:${pad(now.getMinutes())}`;
                 const mesSel = document.getElementById('inf-mes').value;
                 const permitirMorosos = document.getElementById('inf-morosos').checked;
@@ -1868,7 +1863,7 @@
             });
         }
         window.modalNuevaAsamblea = () => {
-            const today = window.getSystemDate().toISOString().split('T')[0];
+            const today = window.getLocalIsoDate();
             const body = `<div class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase mb-1">Asunto</label>
@@ -2129,24 +2124,6 @@
                 if(prefixInput) prefixInput.value = prefixVal;
                 if(nextInput) nextInput.value = nextVal;
                 if(padSelect) padSelect.value = padVal;
-
-                // Cargar fecha del sistema
-                const useDateChk = document.getElementById('cfg-use-system-date');
-                const sysDateInput = document.getElementById('cfg-system-date');
-                const sysTimeInput = document.getElementById('cfg-system-time');
-                const sysContainer = document.getElementById('system-date-container');
-                
-                if (useDateChk && configData.sistema) {
-                    useDateChk.checked = !!configData.sistema.useCustomDate;
-                    if (sysDateInput) sysDateInput.value = configData.sistema.customDate || '';
-                    if (sysTimeInput) sysTimeInput.value = configData.sistema.customTime || '00:00';
-                    
-                    if (useDateChk.checked) {
-                        sysContainer.classList.remove('opacity-50', 'pointer-events-none');
-                    } else {
-                        sysContainer.classList.add('opacity-50', 'pointer-events-none');
-                    }
-                }
             } catch(_) {}
         }
         window.guardarConfigRecibos = async () => {
@@ -2193,34 +2170,6 @@
         };
         window.toggleRestriccionVoto = async (checked) => { await update(ref(db, 'config/votaciones'), { restringirMorosos: checked }); };
         
-        // --- FECHA DEL SISTEMA ---
-        window.toggleSystemDate = async (checked) => {
-            const container = document.getElementById('system-date-container');
-            if (checked) {
-                container.classList.remove('opacity-50', 'pointer-events-none');
-            } else {
-                container.classList.add('opacity-50', 'pointer-events-none');
-            }
-            await update(ref(db, 'config/sistema'), { useCustomDate: checked });
-        };
-
-        window.guardarSystemDate = async () => {
-            const dateVal = document.getElementById('cfg-system-date').value;
-            const timeVal = document.getElementById('cfg-system-time').value || '00:00';
-            if (!dateVal) return showToast("Selecciona una fecha válida", "warning");
-            
-            try {
-                await update(ref(db, 'config/sistema'), { 
-                    customDate: dateVal,
-                    customTime: timeVal
-                });
-                showToast("Fecha del sistema actualizada", "success");
-                // Forzar actualización de datos que dependan del tiempo actual
-                initData();
-            } catch(e) {
-                showToast("Error al actualizar la fecha", "error");
-            }
-        };
         window.limpiarBasePrincipal = async () => {
             if(!confirm("¡PELIGRO! Esta acción eliminará permanentemente todas las cuotas pendientes, asambleas y votaciones. Los socios, administradores y movimientos de CAJA NO serán afectados.\n\n¿Estás completamente seguro de continuar?")) return;
             try { 
@@ -2504,7 +2453,7 @@
                     }
                 }
             }
-            const now = window.getSystemDate();
+            const now = new Date();
             const pad = n => String(n).padStart(2,'0');
             const fechaGen = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} a las ${pad(now.getHours())}:${pad(now.getMinutes())}`;
             const { jsPDF } = window.jspdf || {};
@@ -2684,7 +2633,7 @@
             
             // Pie de página
             y += 50;
-            const now = window.getSystemDate();
+            const now = new Date();
             const pad = n => String(n).padStart(2,'0');
             const fechaGen = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} a las ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
             doc.setFontSize(7);
@@ -2706,7 +2655,7 @@
         };
 
         window.generarPDFEstandar = async (titulo, cuerpoHtml, nombre) => {
-            const now = window.getSystemDate();
+            const now = new Date();
             const pad = n => String(n).padStart(2,'0');
             const fechaGen = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} a las ${pad(now.getHours())}:${pad(now.getMinutes())}`;
             const { jsPDF } = window.jspdf || {};
@@ -2883,7 +2832,7 @@
             XLSX.writeFile(wb, `${fileName}.xlsx`);
         };
         window.reporteMorososPDF = async () => {
-            const mes = document.getElementById('cuotas-filter-month').value || window.getSystemDate().toISOString().substring(0,7);
+            const mes = document.getElementById('cuotas-filter-month').value || window.getLocalIsoMonth();
             let pendientes = cuotasData;
             if(mes) pendientes = pendientes.filter(c => c.fecha && c.fecha.startsWith(mes));
             const porSocio = {};
@@ -2901,7 +2850,7 @@
                     return { sid, nombre, lote, items };
                 })
                 .sort((a,b) => window.compareByLote(a.lote, b.lote) || a.nombre.localeCompare(b.nombre));
-            const now = window.getSystemDate();
+            const now = new Date();
             const pad = n => String(n).padStart(2,'0');
             const fechaGen = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}, ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
             const { jsPDF } = window.jspdf || {};
@@ -2955,7 +2904,7 @@
             doc.save(`Reporte_Morosos_${mes}.pdf`);
         };
         window.reportePagadosPDF = async () => {
-            const mes = document.getElementById('cuotas-filter-month').value || window.getSystemDate().toISOString().substring(0,7);
+            const mes = document.getElementById('cuotas-filter-month').value || window.getLocalIsoMonth();
             let pagadas = allCajaMovs.filter(m => m.esCuota && m.estado !== 'revertido');
             if(mes) pagadas = pagadas.filter(m => m.cuotaOriginal && m.cuotaOriginal.fechaEmision && m.cuotaOriginal.fechaEmision.startsWith(mes));
             const rows = pagadas.map(m => {
@@ -2966,7 +2915,7 @@
                 const piso = s ? (s.piso || '-') : '-';
                 return { nombre, lote, piso, recibo: m.numeroRecibo || '-', fecha: m.fecha || '-', monto: Number(m.monto) || 0 };
             }).sort((a,b) => window.compareByLote(a.lote, b.lote) || a.nombre.localeCompare(b.nombre));
-            const now = window.getSystemDate();
+            const now = new Date();
             const pad = n => String(n).padStart(2,'0');
             const fechaGen = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}, ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
             const { jsPDF } = window.jspdf || {};
@@ -3027,10 +2976,10 @@
             const egresos = [];
             
             for (let i = 5; i >= 0; i--) {
-                const d = window.getSystemDate();
+                const d = new Date();
                 d.setDate(1); // Evitar salto de mes si hoy es día 31
                 d.setMonth(d.getMonth() - i);
-                const monthStr = d.toISOString().substring(0, 7); // YYYY-MM
+                const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
                 labels.push(d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }));
                 
                 // Excluir revertidos de las estadísticas del gráfico
